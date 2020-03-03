@@ -27,10 +27,10 @@
 		} else {
             $icon_url = '';
 			$parent = 'ldc';
-			$settings_page_id = 'ldc-' . sanitize_title($settings_page);
+			$settings_page_id = 'ldc-' . sanitize_title(wp_strip_all_tags($settings_page));
             $submenu_title = $settings_page;
 		}
-		$meta_box_tab_id = $settings_page_id . '-' . sanitize_title($meta_box_tab);
+		$meta_box_tab_id = $settings_page_id . '-' . sanitize_title(wp_strip_all_tags($meta_box_tab));
         $option_name = str_replace('-', '_', $settings_page_id);
 		if($setting){
 			if(empty(self::$settings_pages[$settings_page_id])){
