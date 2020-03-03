@@ -245,7 +245,12 @@
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     static public function mb_settings_pages($settings_pages){
-		$settings_pages = array_merge(array_values(self::$settings_pages), $settings_pages);
+		if(self::$settings_pages){
+			foreach(self::$settings_pages as $index => $settings_page){
+				asort(self::$settings_pages[$index]['tabs']);
+			}
+			$settings_pages = array_merge(array_values(self::$settings_pages), $settings_pages);
+		}
 		return $settings_pages;
 	}
 
