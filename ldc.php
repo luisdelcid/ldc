@@ -18,10 +18,9 @@
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    defined('ABSPATH') or die('No script kiddies please!');
     if(!class_exists('LDC', false)){
         require_once(plugin_dir_path(__FILE__) . 'class-ldc.php');
+        LDC::init(__FILE__);
     }
-    LDC::init(__FILE__);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
