@@ -2,12 +2,12 @@
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    defined('LDC_VERSION') or die('No script kiddies please!');
+    defined('ABSPATH') or die('No script kiddies please!');
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    if(!function_exists('ldc_attachment_guid_to_postid')){
-		function ldc_attachment_guid_to_postid($url = ''){
+    if(!function_exists('ldc_attachment_url_to_postid')){
+		function ldc_attachment_url_to_postid($url = ''){
 			if($url){
 				/** original */
 				$post_id = ldc_guid_to_postid($url);
@@ -58,8 +58,8 @@
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     if(!function_exists('ldc_base64_urldecode')){
-		function ldc_base64_urldecode($data = ''){
-			return base64_decode(strtr($data, '-_', '+/'));
+		function ldc_base64_urldecode($data = '', $strict = false){
+			return base64_decode(strtr($data, '-_', '+/'), $strict);
 		}
 	}
 
@@ -71,7 +71,36 @@
 		}
 	}
 
-      // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    if(!function_exists('ldc_format_function')){
+		function ldc_format_function($function_name = '', $args = array()){
+			$str = '';
+			if($function_name){
+				$str .= '<div style="color: #24831d; font-family: monospace; font-weight: 400;">' . $function_name . '(';
+				$function_args = array();
+				if($args){
+					foreach($args as $arg){
+						$arg = shortcode_atts(array(
+							'default' => 'null',
+							'name' => '',
+							'type' => '',
+						), $arg);
+						if($arg['default'] and $arg['name'] and $arg['type']){
+							$function_args[] = '<span style="color: #cd2f23; font-family: monospace; font-style: italic; font-weight: 400;">' . $arg['type'] . '</span> <span style="color: #0f55c8; font-family: monospace; font-weight: 400;">$' . $arg['name'] . '</span> = <span style="color: #000; font-family: monospace; font-weight: 400;">' . $arg['default'] . '</span>';
+						}
+					}
+				}
+				if($function_args){
+					$str .= ' ' . implode(', ', $function_args) . ' ';
+				}
+				$str .= ')</div>';
+			}
+			return $str;
+		}
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     if(!function_exists('ldc_guid_to_postid')){
 		function ldc_guid_to_postid($guid = ''){

@@ -2,7 +2,10 @@
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    defined('LDC_VERSION') or die('No script kiddies please!');
+    defined('ABSPATH') or die('No script kiddies please!');
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     if(!class_exists('LDC', false)){
         class LDC {
 
@@ -12,35 +15,29 @@
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    static public function add_setting($setting = array(), $settings_page = '', $meta_box_tab = ''){
-        if(!$settings_page){
-			$settings_page = 'LDC';
-		}
-        if(!$meta_box_tab){
-			$meta_box_tab = 'General';
-		}
-		if($settings_page == 'LDC'){
-            $icon_url = 'data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3OTQuMjIgNDQ4LjExIj48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2ZmZjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPmxkYy00czwvdGl0bGU+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOTA3LjE3LDU0NC4xMUE5Niw5NiwwLDEsMSw5NzQuOCwzODBsNDUuMjYtNDUuMjZhMTYwLDE2MCwwLDEsMCwuNSwyMjYuMjdMOTc1LjMsNTE1Ljc0QTk1LjczLDk1LjczLDAsMCwxLDkwNy4xNyw1NDQuMTFaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjM1IC0xNjApIi8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9Ijc3OC40OSA0MTcuNzIgNzc4LjQ4IDQxNy43MyA3NzguNDkgNDE3LjcyIDc3OC40OSA0MTcuNzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjE5Ny44MSIgcj0iMzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjM3OC44MyIgcj0iMzIiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHdpZHRoPSI2NCIgaGVpZ2h0PSI0NDgiIHJ4PSIzMiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTUyMywyODcuNzVhMTYwLDE2MCwwLDEsMCwxNjAsMTYwQTE2MCwxNjAsMCwwLDAsNTIzLDI4Ny43NVptMCwyNTZhOTYsOTYsMCwxLDEsOTYtOTZBOTYsOTYsMCwwLDEsNTIzLDU0My43NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTE2MCkiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHg9IjM4NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjQ0OCIgcng9IjMyIi8+PC9zdmc+';
-			$parent = '';
-            $settings_page_id = 'ldc';
-            $submenu_title = 'General';
-		} else {
-            $icon_url = '';
-			$parent = 'ldc';
-			$settings_page_id = 'ldc-' . sanitize_title(wp_strip_all_tags($settings_page));
-            $submenu_title = $settings_page;
-		}
-		$meta_box_tab_id = $settings_page_id . '-' . sanitize_title(wp_strip_all_tags($meta_box_tab));
-        $option_name = str_replace('-', '_', $settings_page_id);
-		if($setting){
+    static public function add_setting($settings_page = '', $meta_box_tab = '', $setting = array()){
+		if($settings_page and $meta_box_tab and $setting){
+			if($settings_page == 'LDC'){
+				$icon_url = 'data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3OTQuMjIgNDQ4LjExIj48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2ZmZjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPmxkYy00czwvdGl0bGU+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOTA3LjE3LDU0NC4xMUE5Niw5NiwwLDEsMSw5NzQuOCwzODBsNDUuMjYtNDUuMjZhMTYwLDE2MCwwLDEsMCwuNSwyMjYuMjdMOTc1LjMsNTE1Ljc0QTk1LjczLDk1LjczLDAsMCwxLDkwNy4xNyw1NDQuMTFaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjM1IC0xNjApIi8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9Ijc3OC40OSA0MTcuNzIgNzc4LjQ4IDQxNy43MyA3NzguNDkgNDE3LjcyIDc3OC40OSA0MTcuNzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjE5Ny44MSIgcj0iMzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjM3OC44MyIgcj0iMzIiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHdpZHRoPSI2NCIgaGVpZ2h0PSI0NDgiIHJ4PSIzMiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTUyMywyODcuNzVhMTYwLDE2MCwwLDEsMCwxNjAsMTYwQTE2MCwxNjAsMCwwLDAsNTIzLDI4Ny43NVptMCwyNTZhOTYsOTYsMCwxLDEsOTYtOTZBOTYsOTYsMCwwLDEsNTIzLDU0My43NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTE2MCkiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHg9IjM4NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjQ0OCIgcng9IjMyIi8+PC9zdmc+';
+				$parent = '';
+				$settings_page_id = 'ldc';
+				$submenu_title = 'General';
+			} else {
+				$icon_url = '';
+				$parent = 'ldc';
+				$settings_page_id = 'ldc-' . sanitize_title(wp_strip_all_tags($settings_page));
+				$submenu_title = '';
+			}
+			$meta_box_tab_id = $settings_page_id . '-' . sanitize_title(wp_strip_all_tags($meta_box_tab));
+			$option_name = str_replace('-', '_', $settings_page_id);
 			if(empty(self::$settings_pages[$settings_page_id])){
 				self::$settings_pages[$settings_page_id] = array(
 					'columns' => 1,
-                    'icon_url' => $icon_url,
+					'icon_url' => $icon_url,
 					'id' => $settings_page_id,
 					'menu_title' => $settings_page,
 					'option_name' => $option_name,
-					'page_title' => $settings_page . ' Settings',
+					'page_title' => $settings_page . ' &#8212; ' . __('Settings'),
 					'parent' => $parent,
 					'style' => 'no-boxes',
 					'tabs' => array(),
@@ -56,7 +53,7 @@
 					'id' => $meta_box_tab_id,
 					'settings_pages' => $settings_page_id,
 					'tab' => $meta_box_tab_id,
-					'title' => $meta_box_tab . ' Settings',
+					'title' => $meta_box_tab . ' &#8212; ' . __('Settings'),
 				);
 			}
 			if(empty($setting['columns'])){
@@ -69,11 +66,10 @@
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     static public function admin_enqueue_scripts(){
-        global $pagenow;
-        $key = str_replace('ldc_page_', '', $pagenow);
-        if($pagenow != 'toplevel_page_ldc' and !array_key_exists($key, self::$settings_pages)){
-            return;
-        }
+        $screen = get_current_screen();
+		if($screen->id != 'toplevel_page_ldc' and !array_key_exists(str_replace('ldc_page_', '', $screen->id), self::$settings_pages)){
+			return;
+		}
         if(wp_script_is('gist-embed', 'enqueued')){
             return;
         }
@@ -86,9 +82,8 @@
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     static public function admin_footer(){
-        global $pagenow;
-        $key = str_replace('ldc_page_', '', $pagenow);
-        if($pagenow == 'toplevel_page_ldc' or array_key_exists($key, self::$settings_pages)){ ?>
+		$screen = get_current_screen();
+		if($screen->id == 'toplevel_page_ldc' or array_key_exists(str_replace('ldc_page_', '', $screen->id), self::$settings_pages)){ ?>
             <script>
                 jQuery(function($){
                     $('#ldc_search_functions').on('input propertychange', function(){
@@ -119,9 +114,8 @@
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     static public function admin_head(){
-        global $pagenow;
-        $key = str_replace('ldc_page_', '', $pagenow);
-        if($pagenow == 'toplevel_page_ldc' or array_key_exists($key, self::$settings_pages)){ ?>
+		$screen = get_current_screen();
+        if($screen->id == 'toplevel_page_ldc' or array_key_exists(str_replace('ldc_page_', '', $screen->id), self::$settings_pages)){ ?>
             <style>
                 .form-wrap p,
                 p.description,
@@ -135,27 +129,6 @@
                     margin: 0;
                     padding: 0;
                 }
-                .ldc-args {
-                    color: #24831d;
-                    font-family: monospace;
-                    font-weight: 400;
-                }
-                .ldc-arg-type {
-                    color: #cd2f23;
-                    font-family: monospace;
-                    font-style: italic;
-                    font-weight: 400;
-                }
-                .ldc-arg-name {
-                    color: #0f55c8;
-                    font-family: monospace;
-                    font-weight: 400;
-                }
-                .ldc-arg-default {
-                    color: #000000;
-                    font-family: monospace;
-                    font-weight: 400;
-                }
             </style><?php
         }
     }
@@ -163,12 +136,84 @@
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     static public function after_setup_theme(){
-        self::add_setting(array(
+		global $wpdb;
+		$empty_string = $wpdb->prepare('%s', '');
+        self::add_setting('LDC', 'General', array(
 			'name' => sprintf(__('%1$s is proudly powered by %2$s'), 'LDC', '<a href="https://luisdelcid.com" target="_blank">Luis del Cid</a>'),
 			'std' => '<a class="button" href="https://luisdelcid.com" target="_blank">luisdelcid.com</a>',
 			'type' => 'custom_html',
 		));
-        do_action('ldc_settings_added');
+		self::add_setting('LDC', 'Functions', array(
+			'id' => 'ldc_search_functions',
+			'name' => '',
+			'type' => 'text',
+			'placeholder' => __('Search'),
+		));
+		self::add_setting('LDC', 'Functions', array(
+			'name' => '',
+			'std' => ldc_format_function('ldc_attachment_url_to_postid', array(
+				array(
+					'type' => 'string',
+					'name' => 'url',
+					'default' => $empty_string,
+				),
+			)),
+			'type' => 'custom_html',
+		));
+		self::add_setting('LDC', 'Functions', array(
+			'name' => '',
+			'std' => ldc_format_function('ldc_base64_urldecode', array(
+				array(
+					'type' => 'string',
+					'name' => 'data',
+					'default' => $empty_string,
+				),
+				array(
+					'type' => 'bool',
+					'name' => 'strict',
+					'default' => 'false',
+				),
+			)),
+			'type' => 'custom_html',
+		));
+		self::add_setting('LDC', 'Functions', array(
+			'name' => '',
+			'std' => ldc_format_function('ldc_base64_urlencode', array(
+				array(
+					'type' => 'string',
+					'name' => 'data',
+					'default' => $empty_string,
+				),
+			)),
+			'type' => 'custom_html',
+		));
+		self::add_setting('LDC', 'Functions', array(
+			'name' => '',
+			'std' => ldc_format_function('ldc_format_function', array(
+				array(
+					'type' => 'string',
+					'name' => 'function_name',
+					'default' => $empty_string,
+				),
+				array(
+					'type' => 'array',
+					'name' => 'args',
+					'default' => 'array()',
+				),
+			)),
+			'type' => 'custom_html',
+		));
+		self::add_setting('LDC', 'Functions', array(
+			'name' => '',
+			'std' => ldc_format_function('ldc_guid_to_postid', array(
+				array(
+					'type' => 'string',
+					'name' => 'guid',
+					'default' => $empty_string,
+				),
+			)),
+			'type' => 'custom_html',
+		));
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
