@@ -14,14 +14,11 @@
  *
  */ // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-	defined('ABSPATH') or die('No script kiddies please!');
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
     define('LDC_VERSION', '0.3.2');
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    defined('ABSPATH') or die('No script kiddies please!');
     if(!class_exists('LDC', false)){
         require_once(plugin_dir_path(__FILE__) . 'class-ldc.php');
     }
