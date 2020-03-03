@@ -2,6 +2,7 @@
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    defined('LDC_VERSION') or die('No script kiddies please!');
     if(!class_exists('LDC', false)){
         class LDC {
 
@@ -171,7 +172,7 @@
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     static public function init($file = ''){
-        if(defined('ABSPATH') and is_file($file)){
+        if(is_file($file)){
             self::$file = $file;
             self::build_update_checker('https://github.com/luisdelcid/ldc', self::$file, 'ldc');
             add_action('admin_enqueue_scripts', array(__CLASS__, 'admin_enqueue_scripts'));

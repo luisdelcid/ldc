@@ -14,12 +14,11 @@
  *
  */ // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    define('LDC_VERSION', '0.3.2');
-
-	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-    if(!class_exists('LDC', false)){
-        require_once(plugin_dir_path(__FILE__) . 'class-ldc.php');
+    defined('LDC_VERSION') or define('LDC_VERSION', '0.3.2');
+    if(defined('ABSPATH')){
+        if(!class_exists('LDC', false)){
+            require_once(plugin_dir_path(__FILE__) . 'class-ldc.php');
+        }
         LDC::init(__FILE__);
     }
 
