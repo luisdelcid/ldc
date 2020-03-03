@@ -168,6 +168,7 @@
 			'std' => '<a class="button" href="https://luisdelcid.com" target="_blank">luisdelcid.com</a>',
 			'type' => 'custom_html',
 		));
+        do_action('ldc_settings_added');
 	}
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
