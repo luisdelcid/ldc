@@ -21,7 +21,7 @@
 				$icon_url = 'data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3OTQuMjIgNDQ4LjExIj48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2ZmZjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPmxkYy00czwvdGl0bGU+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOTA3LjE3LDU0NC4xMUE5Niw5NiwwLDEsMSw5NzQuOCwzODBsNDUuMjYtNDUuMjZhMTYwLDE2MCwwLDEsMCwuNSwyMjYuMjdMOTc1LjMsNTE1Ljc0QTk1LjczLDk1LjczLDAsMCwxLDkwNy4xNyw1NDQuMTFaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjM1IC0xNjApIi8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9Ijc3OC40OSA0MTcuNzIgNzc4LjQ4IDQxNy43MyA3NzguNDkgNDE3LjcyIDc3OC40OSA0MTcuNzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjE5Ny44MSIgcj0iMzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjM3OC44MyIgcj0iMzIiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHdpZHRoPSI2NCIgaGVpZ2h0PSI0NDgiIHJ4PSIzMiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTUyMywyODcuNzVhMTYwLDE2MCwwLDEsMCwxNjAsMTYwQTE2MCwxNjAsMCwwLDAsNTIzLDI4Ny43NVptMCwyNTZhOTYsOTYsMCwxLDEsOTYtOTZBOTYsOTYsMCwwLDEsNTIzLDU0My43NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTE2MCkiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHg9IjM4NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjQ0OCIgcng9IjMyIi8+PC9zdmc+';
 				$parent = '';
 				$settings_page_id = 'ldc';
-				$submenu_title = 'General';
+				$submenu_title = __('Settings');
 			} else {
 				$icon_url = '';
 				$parent = 'ldc';
@@ -39,15 +39,16 @@
 					'option_name' => $option_name,
 					'page_title' => $settings_page . ' &#8212; ' . __('Settings'),
 					'parent' => $parent,
+					'submenu_title' => $submenu_title,
 					'style' => 'no-boxes',
 					'tabs' => array(),
 					'tab_style' => 'left',
 				);
 			}
-			if(!isset(self::$settings_pages[$settings_page_id]['tabs'][$meta_box_tab_id])){
+			if(empty(self::$settings_pages[$settings_page_id]['tabs'][$meta_box_tab_id])){
 				self::$settings_pages[$settings_page_id]['tabs'][$meta_box_tab_id] = $meta_box_tab;
 			}
-			if(!isset(self::$meta_boxes[$meta_box_tab_id])){
+			if(empty(self::$meta_boxes[$meta_box_tab_id])){
 				self::$meta_boxes[$meta_box_tab_id] = array(
 					'fields' => array(),
 					'id' => $meta_box_tab_id,
@@ -138,11 +139,11 @@
     static public function after_setup_theme(){
 		global $wpdb;
 		$empty_string = $wpdb->prepare('%s', '');
-        self::add_setting('LDC', 'General', array(
+        /*self::add_setting('LDC', 'General', array(
 			'name' => sprintf(__('%1$s is proudly powered by %2$s'), 'LDC', '<a href="https://luisdelcid.com" target="_blank">Luis del Cid</a>'),
 			'std' => '<a class="button" href="https://luisdelcid.com" target="_blank">luisdelcid.com</a>',
 			'type' => 'custom_html',
-		));
+		));*/
 		self::add_setting('LDC', 'Functions', array(
 			'id' => 'ldc_search_functions',
 			'name' => '',
@@ -249,7 +250,11 @@
 			foreach(self::$settings_pages as $index => $settings_page){
 				asort(self::$settings_pages[$index]['tabs']);
 			}
-			$settings_pages = array_merge(array_values(self::$settings_pages), $settings_pages);
+			if(!empty(self::$settings_pages['ldc'])){
+				$ldc = self::$settings_pages['ldc'];
+				unset(self::$settings_pages['ldc']);
+				$settings_pages = array_merge(array($ldc), array_values(self::$settings_pages), $settings_pages);
+			}
 		}
 		return $settings_pages;
 	}
