@@ -2,7 +2,7 @@
 /**
  * Author: Luis del Cid
  * Author URI: https://luisdelcid.com
- * Description: A collection of useful functions for your WordPress theme's functions.php.
+ * Description: Just another WordPress plugin.
  * Domain Path:
  * License: GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html

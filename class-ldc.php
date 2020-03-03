@@ -21,10 +21,12 @@
 		}
 		if($settings_page == 'LDC'){
             $icon_url = 'data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3OTQuMjIgNDQ4LjExIj48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2ZmZjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPmxkYy00czwvdGl0bGU+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOTA3LjE3LDU0NC4xMUE5Niw5NiwwLDEsMSw5NzQuOCwzODBsNDUuMjYtNDUuMjZhMTYwLDE2MCwwLDEsMCwuNSwyMjYuMjdMOTc1LjMsNTE1Ljc0QTk1LjczLDk1LjczLDAsMCwxLDkwNy4xNyw1NDQuMTFaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjM1IC0xNjApIi8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9Ijc3OC40OSA0MTcuNzIgNzc4LjQ4IDQxNy43MyA3NzguNDkgNDE3LjcyIDc3OC40OSA0MTcuNzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjE5Ny44MSIgcj0iMzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjM3OC44MyIgcj0iMzIiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHdpZHRoPSI2NCIgaGVpZ2h0PSI0NDgiIHJ4PSIzMiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTUyMywyODcuNzVhMTYwLDE2MCwwLDEsMCwxNjAsMTYwQTE2MCwxNjAsMCwwLDAsNTIzLDI4Ny43NVptMCwyNTZhOTYsOTYsMCwxLDEsOTYtOTZBOTYsOTYsMCwwLDEsNTIzLDU0My43NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTE2MCkiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHg9IjM4NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjQ0OCIgcng9IjMyIi8+PC9zdmc+';
+			$parent = '';
             $settings_page_id = 'ldc';
             $submenu_title = 'General';
 		} else {
             $icon_url = '';
+			$parent = 'ldc';
 			$settings_page_id = 'ldc-' . sanitize_title($settings_page);
             $submenu_title = $settings_page;
 		}
@@ -39,7 +41,7 @@
 					'menu_title' => $settings_page,
 					'option_name' => $option_name,
 					'page_title' => $settings_page . ' Settings',
-					'parent' => 'ldc',
+					'parent' => $parent,
 					'style' => 'no-boxes',
 					'tabs' => array(),
 					'tab_style' => 'left',
@@ -160,6 +162,16 @@
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+    static public function after_setup_theme(){
+        self::add_setting(array(
+			'name' => sprintf(__('%1$s is proudly powered by %2$s'), 'LDC', '<a href="https://luisdelcid.com" target="_blank">Luis del Cid</a>'),
+			'std' => '<a class="button" href="https://luisdelcid.com" target="_blank">luisdelcid.com</a>',
+			'type' => 'custom_html',
+		));
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
     static public function build_update_checker($url = '', $path = '', $slug = ''){
         if(!class_exists('Puc_v4_Factory', false)){
             require_once(plugin_dir_path(self::$file) . 'includes/plugin-update-checker-4.9/plugin-update-checker.php');
@@ -178,12 +190,9 @@
             add_action('admin_enqueue_scripts', array(__CLASS__, 'admin_enqueue_scripts'));
     		add_action('admin_footer', array(__CLASS__, 'admin_footer'));
     		add_action('admin_head', array(__CLASS__, 'admin_head'));
+			add_action('after_setup_theme', array(__CLASS__, 'after_setup_theme'));
     		add_filter('mb_settings_pages', array(__CLASS__, 'mb_settings_pages'));
     		add_filter('rwmb_meta_boxes', array(__CLASS__, 'rwmb_meta_boxes'));
-            self::add_setting(array(
-                'std' => '<a target="_blank" class="button" href="https://luisdelcid.com">luisdelcid.com</a>',
-                'type' => 'custom_html',
-            ));
         }
 	}
 
