@@ -254,8 +254,16 @@
 
     static public function mb_settings_pages($settings_pages){
 		if(self::$settings_pages){
-			foreach(self::$settings_pages as $index => $settings_page){
-				asort(self::$settings_pages[$index]['tabs']);
+			foreach(self::$settings_pages as $id => $settings_page){
+				asort(self::$settings_pages[$id]['tabs']);
+				$tab_id = $id . '-' . sanitize_title(wp_strip_all_tags(__('General')));
+				if(!empty($settings_page['tabs'][$tab_id])){
+					$general = $settings_page['tabs'][$tab_id];
+					unset($settings_page['tabs'][$tab_id]);
+					self::$settings_pages[$id]['tabs'] = array_merge(array(
+						$tab_id => $general,
+					), $settings_page['tabs']);
+				}
 			}
 			if(!empty(self::$settings_pages['ldc'])){
 				$ldc = self::$settings_pages['ldc'];
