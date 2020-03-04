@@ -10,11 +10,11 @@
  * Plugin Name: LDC
  * Plugin URI: https://github.com/luisdelcid/ldc
  * Text Domain: ldc
- * Version: 0.3.3
+ * Version: 0.3.3.1
  *
  */ // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    defined('LDC_VERSION') or define('LDC_VERSION', '0.3.3');
+    defined('LDC_VERSION') or define('LDC_VERSION', '0.3.3.1');
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
