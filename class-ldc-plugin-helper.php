@@ -1,0 +1,349 @@
+<?php
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    defined('ABSPATH') or die('No script kiddies please!');
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    if(!class_exists('LDC_Plugin_Helper', false)){
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    class LDC_Plugin_Helper {
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    private static $admin_notices = array(), $file = '', $meta_boxes = array(), $missing_meta_box_extensions_and_plugins = array(), $required_meta_box_extensions = array(), $required_plugins = array(), $settings_pages = array();
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	static public function add_admin_notice($admin_notice = '', $class = 'error', $is_dismissible = false){
+		if($admin_notice){
+			if(!in_array($class, array('error', 'warning', 'success', 'info'))){
+				$class = 'error';
+			}
+			if($is_dismissible){
+				$class .= ' is-dismissible';
+			}
+			self::$admin_notices[] = '<div class="notice notice-' . $class . '"><p>' . $admin_notice . '</p></div>';
+		}
+	}
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function add_setting($page = '', $tab = '', $setting = array()){
+		if($page and $tab and $setting){
+            if($page == 'LDC'){
+				$icon_url = 'data:image/svg+xml;base64,PHN2ZyBpZD0iTGF5ZXJfMSIgZGF0YS1uYW1lPSJMYXllciAxIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA3OTQuMjIgNDQ4LjExIj48ZGVmcz48c3R5bGU+LmNscy0xe2ZpbGw6I2ZmZjt9PC9zdHlsZT48L2RlZnM+PHRpdGxlPmxkYy00czwvdGl0bGU+PHBhdGggY2xhc3M9ImNscy0xIiBkPSJNOTA3LjE3LDU0NC4xMUE5Niw5NiwwLDEsMSw5NzQuOCwzODBsNDUuMjYtNDUuMjZhMTYwLDE2MCwwLDEsMCwuNSwyMjYuMjdMOTc1LjMsNTE1Ljc0QTk1LjczLDk1LjczLDAsMCwxLDkwNy4xNyw1NDQuMTFaIiB0cmFuc2Zvcm09InRyYW5zbGF0ZSgtMjM1IC0xNjApIi8+PHBvbHlnb24gY2xhc3M9ImNscy0xIiBwb2ludHM9Ijc3OC40OSA0MTcuNzIgNzc4LjQ4IDQxNy43MyA3NzguNDkgNDE3LjcyIDc3OC40OSA0MTcuNzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjE5Ny44MSIgcj0iMzIiLz48Y2lyY2xlIGNsYXNzPSJjbHMtMSIgY3g9Ijc2Mi4yMiIgY3k9IjM3OC44MyIgcj0iMzIiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHdpZHRoPSI2NCIgaGVpZ2h0PSI0NDgiIHJ4PSIzMiIvPjxwYXRoIGNsYXNzPSJjbHMtMSIgZD0iTTUyMywyODcuNzVhMTYwLDE2MCwwLDEsMCwxNjAsMTYwQTE2MCwxNjAsMCwwLDAsNTIzLDI4Ny43NVptMCwyNTZhOTYsOTYsMCwxLDEsOTYtOTZBOTYsOTYsMCwwLDEsNTIzLDU0My43NVoiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTE2MCkiLz48cmVjdCBjbGFzcz0iY2xzLTEiIHg9IjM4NCIgd2lkdGg9IjY0IiBoZWlnaHQ9IjQ0OCIgcng9IjMyIi8+PC9zdmc+';
+				$parent = '';
+				$page_id = 'ldc';
+                $page_title = __('General Settings');
+				$submenu_title = __('General');
+			} else {
+				$icon_url = '';
+				$parent = 'ldc';
+				$page_id = 'ldc-' . sanitize_title(wp_strip_all_tags($settings_page));
+                $page_title = $page . ' &#8212; ' . __('Settings');
+				$submenu_title = '';
+			}
+			$tab_id = $page_id . '-' . sanitize_title(wp_strip_all_tags($tab));
+			$option_name = str_replace('-', '_', $page_id);
+			if(empty(self::$settings_pages[$page_id])){
+				self::$settings_pages[$page_id] = array(
+                    'columns' => 1,
+					'icon_url' => $icon_url,
+					'id' => $page_id,
+					'menu_title' => $page,
+					'option_name' => $option_name,
+					'page_title' => $page_title,
+					'parent' => $parent,
+					'submenu_title' => $submenu_title,
+					'style' => 'no-boxes',
+					'tabs' => array(),
+					'tab_style' => 'left',
+				);
+			}
+			if(empty(self::$settings_pages[$page_id]['tabs'][$tab_id])){
+				self::$settings_pages[$page_id]['tabs'][$tab_id] = $tab;
+			}
+			if(empty(self::$meta_boxes[$tab_id])){
+				self::$meta_boxes[$tab_id] = array(
+					'fields' => array(),
+					'id' => $tab_id,
+					'settings_pages' => $page_id,
+					'tab' => $tab_id,
+					'title' => $tab,
+				);
+			}
+			if(empty($setting['columns'])){
+				$setting['columns'] = 12;
+			}
+			self::$meta_boxes[$tab_id]['fields'][] = $setting;
+		}
+	}
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function admin_enqueue_scripts(){
+        $screen = get_current_screen();
+		if($screen->id != 'toplevel_page_ldc' and !array_key_exists(str_replace('ldc_page_', '', $screen->id), self::$settings_pages)){
+			return;
+		}
+        if(wp_script_is('gist-embed', 'enqueued')){
+            return;
+        }
+        if(!wp_script_is('gist-embed', 'registered')){
+            wp_register_script('gist-embed', 'https://cdnjs.cloudflare.com/ajax/libs/gist-embed/2.7.1/gist-embed.min.js', array('jquery'), '2.7.1', true);
+        }
+        wp_enqueue_script('gist-embed');
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function admin_footer(){
+		$screen = get_current_screen();
+		if($screen->id == 'toplevel_page_ldc' or array_key_exists(str_replace('ldc_page_', '', $screen->id), self::$settings_pages)){ ?>
+            <script>
+                jQuery(function($){
+                    $('#ldc_search_functions').on('input propertychange', function(){
+                        var value = $(this).val().toLowerCase();
+                        var values = value.split(' ');
+                        $('.rwmb-meta-box').each(function(){
+                            $(this).find('.rwmb-row').not(':first').filter(function(){
+                                var row_value = $(this).find('.rwmb-input').text().toLowerCase();
+                                var result_count = 0;
+                                $.each(values, function(index, tmp_value){
+                                    if(row_value.indexOf(tmp_value) > -1){
+                                        result_count ++;
+                                    }
+                                });
+                                if(values.length == result_count){
+                                    $(this).show();
+                                } else {
+                                    $(this).hide();
+                                }
+                            });
+                        });
+                    });
+                });
+            </script><?php
+        }
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function admin_head(){
+		$screen = get_current_screen();
+        if($screen->id == 'toplevel_page_ldc' or array_key_exists(str_replace('ldc_page_', '', $screen->id), self::$settings_pages)){
+			if($screen->id == 'toplevel_page_ldc'){ ?>
+				<style>
+					p.submit {
+					   display: none;
+					}
+				</style><?php
+			} ?>
+            <style>
+                .form-wrap p,
+                p.description,
+                p.help,
+                span.description {
+                    font-style: normal;
+                }
+                code[data-gist-id] {
+                    background: transparent;
+                    border: 0;
+                    margin: 0;
+                    padding: 0;
+                }
+            </style><?php
+        }
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	static public function admin_init(){
+        self::missing_meta_box_extensions_and_plugins();
+        if(self::$missing_meta_box_extensions_and_plugins){
+            foreach(self::$missing_meta_box_extensions_and_plugins as $class_name => $missing_meta_box_extensions_and_plugins){
+                deactivate_plugins($class_name::get_basename());
+            }
+        }
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	static public function admin_notices(){
+        if(self::$admin_notices){
+            foreach(self::$admin_notices as $admin_notice){
+                echo $admin_notice;
+            }
+        }
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function after_setup_theme(){
+        add_action('admin_enqueue_scripts', array(__CLASS__, 'admin_enqueue_scripts'));
+        add_action('admin_footer', array(__CLASS__, 'admin_footer'));
+        add_action('admin_head', array(__CLASS__, 'admin_head'));
+        add_action('admin_notices', array(__CLASS__, 'admin_notices'));
+        add_filter('mb_settings_pages', array(__CLASS__, 'mb_settings_pages'));
+        add_filter('rwmb_meta_boxes', array(__CLASS__, 'rwmb_meta_boxes'));
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function build_update_checker($url = '', $path = '', $slug = ''){
+        if(!class_exists('Puc_v4_Factory', false)){
+            require_once(plugin_dir_path(self::$file) . 'includes/plugin-update-checker-4.9/plugin-update-checker.php');
+        }
+        if($url and is_file($path) and $slug){
+            Puc_v4_Factory::buildUpdateChecker($url, $path, $slug);
+        }
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function init(){
+        self::$file = $file;
+        add_action('after_setup_theme', array(__CLASS__, 'after_setup_theme'));
+        self::add_setting('LDC', __('General'), array(
+			'name' => sprintf(__('%1$s is proudly powered by %2$s'), 'LDC', '<a href="https://luisdelcid.com" target="_blank">Luis del Cid</a>'),
+			'std' => '<a class="button" href="https://luisdelcid.com" target="_blank">luisdelcid.com</a>',
+			'type' => 'custom_html',
+		));
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function mb_settings_pages($settings_pages){
+		if(self::$settings_pages){
+            ksort(self::$settings_pages);
+			foreach(self::$settings_pages as $id => $settings_page){
+				ksort(self::$settings_pages[$id]['tabs']);
+			}
+		}
+		return $settings_pages;
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function missing_meta_box_extensions_and_plugins(){
+        if(self::$required_plugins){
+            if(!function_exists('is_plugin_active')){
+    			require_once(ABSPATH . 'wp-admin/includes/plugin.php');
+    		}
+            foreach(self::$required_plugins as $class_name => $plugins){
+                $missing_plugins = array();
+                foreach($plugins as $plugin){
+                    if(!is_plugin_active($plugin['basename'])){
+            			$missing_plugins[$plugin['basename']] = array(
+            				'name' => $plugin['name'],
+            				'url' => $plugin['url'],
+            			);
+            		}
+                }
+                if($missing_plugins){
+                    $missing_plugins = array_map(function($missing_plugin = array()){
+                        if($missing_plugin['url']){
+                            return '<a href="' . $missing_plugin['url'] . '" target="_blank">' . $missing_plugin['name'] . '</a>';
+                        } else {
+                            return $missing_plugin['name'];
+                        }
+        			}, $missing_plugins);
+        			$admin_notice = '<strong>' . $class_name::get_name() . '</strong> requires ';
+        			$last = array_pop($missing_plugins);
+        			if($missing_plugins){
+        				$admin_notice .= implode(', ', $missing_plugins) . ' and ';
+        			}
+        			$admin_notice .= $last . ' plugin';
+        			if($missing_plugins){
+        				$admin_notice .= 's';
+        			}
+        			$admin_notice .= '.';
+        			self::add_admin_notice($admin_notice);
+                    self::$missing_meta_box_extensions_and_plugins[$class_name] = true;
+                }
+            }
+        }
+        if(self::$required_extensions){
+            $meta_box_aio = get_option('meta_box_aio');
+    		$active_extensions = isset($meta_box_aio['extensions']) ? $meta_box_aio['extensions'] : array();
+            foreach(self::$required_extensions as $class_name => $extensions){
+                $missing_extensions = array();
+                foreach($extensions as $extension){
+                    if(!in_array($extension['slug'], $active_extensions)){
+            			$missing_extensions[$extension['slug']] = array(
+            				'name' => $extension['name'],
+            				'url' => $extension['url'],
+            			);
+            		}
+                }
+                if($missing_extensions){
+        			$missing_extensions = array_map(function($missing_extension = array()){
+                        if($missing_extension['url']){
+                            return '<a href="' . $missing_extension['url'] . '" target="_blank">' . $missing_extension['name'] . '</a>';
+                        } else {
+                            return $missing_extension['name'];
+                        }
+        			}, $missing_extensions);
+        			$admin_notice = '<strong>' . $class_name::get_name() . '</strong> requires ';
+        			$last = array_pop($missing_extensions);
+        			if($missing_extensions){
+        				$admin_notice .= implode(', ', $missing_extensions) . ' and ';
+        			}
+        			$admin_notice .= $last . ' Meta Box extension';
+        			if($missing_extensions){
+        				$admin_notice .= 's';
+        			}
+        			$admin_notice .= '.';
+        			self::add_admin_notice($admin_notice);
+                    self::$missing_meta_box_extensions_and_plugins[$class_name] = true;
+        		}
+            }
+        }
+	}
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function require_meta_box_extension($class_name = '', $extension = array()){
+        if($class_name and $extension){
+            self::$required_meta_box_extensions[] = shortcode_atts(array(
+                'name' => '',
+                'slug' => '',
+                'url' => '',
+            ), $extension);
+        }
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function require_plugin($class_name = '', $plugin = array()){
+        if($class_name and $plugin){
+            self::$required_plugins[$class_name][] = shortcode_atts(array(
+                'basename' => '',
+                'name' => '',
+                'url' => '',
+            ), $plugin);
+        }
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    static public function rwmb_meta_boxes($meta_boxes){
+		if(self::$meta_boxes and is_admin()){
+			$meta_boxes = array_merge(array_values(self::$meta_boxes), $meta_boxes);
+		}
+		return $meta_boxes;
+	}
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    }
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    }
+
+	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

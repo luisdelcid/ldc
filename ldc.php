@@ -10,20 +10,20 @@
  * Plugin Name: LDC
  * Plugin URI: https://github.com/luisdelcid/ldc
  * Text Domain: ldc
- * Version: 0.3.3.1
+ * Version: 0.3.4
  *
  */ // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    defined('LDC_VERSION') or define('LDC_VERSION', '0.3.3.1');
+    defined('LDC_VERSION') or define('LDC_VERSION', '0.3.4');
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     defined('ABSPATH') or die('No script kiddies please!');
-
-    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
     require_once(plugin_dir_path(__FILE__) . 'functions.php');
-	require_once(plugin_dir_path(__FILE__) . 'class-ldc.php');
+	require_once(plugin_dir_path(__FILE__) . 'class-ldc-plugin-helper.php');
+    LDC_Plugin_Helper::init(__FILE__);
+    require_once(plugin_dir_path(__FILE__) . 'class-ldc-plugin-base.php');
+    require_once(plugin_dir_path(__FILE__) . 'class-ldc.php');
     LDC::init(__FILE__);
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
