@@ -639,8 +639,8 @@ if(!class_exists('ldc')){
             if(is_wp_error($download_dir)){
                 return $download_dir;
             }
-            $md5 = md5($url);
-            $to = $download_dir . '/' . $md5;
+			$uuid4 = $this->md5_to_uuid4(md5($url));
+            $to = $download_dir . '/' . $uuid4;
             if($dir){
                 $dir = $to . '/' . ltrim(untrailingslashit($dir), '/');
             } else {
@@ -668,7 +668,7 @@ if(!class_exists('ldc')){
             }
 			return [
 				'dir' => $dir,
-				'url' => $this->download_url() . '/' . $md5,
+				'url' => $this->download_url() . '/' . $uuid4,
 			];
 		}
 
