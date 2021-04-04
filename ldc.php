@@ -10,6 +10,8 @@ Author: Luis del Cid
 Author URI: https://github.com/luisdelcid
 License: GPL2
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
+Text Domain: ldc
+Domain Path:
 Network: true
 */
 
