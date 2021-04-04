@@ -3,9 +3,9 @@ Contributors: @luisdelcid
 Donate link: https://luisdelcid.com
 Tags: ldc
 Requires at least: 5.0
-Tested up to: 5.3.2
-Stable tag: 0.3.3.1
+Tested up to: 5.6
 Requires PHP: 5.6
+Stable tag: 0.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -13,8 +13,8 @@ LDC
 
 == Description ==
 
-Just another WordPress plugin.
+A collection of useful functions for your WordPress theme's functions.php.
 
 == Changelog ==
 
-Visit my [website](https://luisdelcid.com "luisdelcid.com") for up-to-date information.
+[Changelog »](https://github.com/luisdelcid/ldc "LDC")
