@@ -12,7 +12,7 @@
  * @copyright Copyright 2022, Luis del Cid
  * @license GPL2 https://www.gnu.org/licenses/gpl-2.0.html
  * @link https://github.com/luisdelcid/ldc
- * @version 0.10.21
+ * @version 0.10.22
  */
 
 if(!class_exists(__NAMESPACE__ . '\LDC') and defined('ABSPATH')){
