@@ -220,7 +220,7 @@ $loader = $abspath . 'wp-load.php';
 if(!file_exists($loader)){
     ifwp_404();
 }
-require_once $loader;
+require_once($loader);
 error_reporting(0);
 nocache_headers();
 $basedir = ABSPATH . 'wp-content/uploads';
