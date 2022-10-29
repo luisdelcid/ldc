@@ -12,4 +12,3 @@
 
 defined('ABSPATH') or die('WordPress is not bootstrapped, not much I can do when called directly.');
 require_once(dirname(__FILE__) . '/class-ldc.php');
-//test
