@@ -214,12 +214,15 @@ function ldc_user_can($user_id = 0, $capability = ''){
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-define('SHORTINIT', true);
+if(!isset($_GET['file'], $_GET['levels'])){
+	ldc_404();
+}
 $abspath = ldc_dirname(__FILE__, $_GET['levels']);
-$loader = $abspath . 'wp-load.php';
+$loader = $abspath . '/wp-load.php';
 if(!file_exists($loader)){
     ldc_404();
 }
+define('SHORTINIT', true);
 require_once($loader);
 error_reporting(0);
 nocache_headers();
