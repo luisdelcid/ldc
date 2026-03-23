@@ -5241,7 +5241,7 @@ if(!class_exists('ldc')){
                 $error_msg = __('A valid URL was not provided.');
                 return self::error($error_msg);
             }
-            $slug = self::plugin_slug($plugin_file);
+            $slug = self::plugin_id($plugin_file);
             if(is_wp_error($slug)){
                 return $slug;
             }

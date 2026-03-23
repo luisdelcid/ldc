@@ -5,7 +5,7 @@ Tags: ldc
 Tested up to: 6.9.4
 Requires at least: 5.6
 Requires PHP: 5.6
-Stable tag: 26.3.22.3
+Stable tag: 26.3.22.4
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
