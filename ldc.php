@@ -2,8 +2,8 @@
 /*
  * Plugin Name: LDC
  * Plugin URI: https://github.com/luisdelcid/ldc
- * Description: A personal collection of useful methods and tools for plugin and theme developers.
- * Version: 26.3.22.4
+ * Description: A personal collection of useful methods for WordPress plugins and themes.
+ * Version: 26.3.31
  * Requires at least: 5.6
  * Requires PHP: 5.6
  * Author: Luis del Cid
@@ -27,39 +27,22 @@ if(!defined('ABSPATH')){
     die('-1');
 }
 
-// Load PHP classes.
-foreach(glob(plugin_dir_path(__FILE__) . 'includes/classes/*.php') as $_ldc_class_file){
-    require_once $_ldc_class_file;
-}
-unset($_ldc_class_file);
+// Load PHP methods.
+require_once plugin_dir_path(__FILE__) . 'loader/load.php';
 
-// Check for updates as soon as possible.
-$_ldc_update_checker = ldc::plugin_update_checker();
-if(is_wp_error($_ldc_update_checker)){
-    ldc::add_admin_notice($_ldc_update_checker->get_error_message(), [
-        'type' => 'error',
-    ]);
-}
-unset($_ldc_update_checker);
-
-// Load JavaScript classes.
-if(!has_action('admin_enqueue_scripts', ['ldc', '_enqueue_scripts'])){
-    add_action('admin_enqueue_scripts', ['ldc', '_enqueue_scripts']);
-}
-if(!has_action('login_enqueue_scripts', ['ldc', '_enqueue_scripts'])){
-    add_action('login_enqueue_scripts', ['ldc', '_enqueue_scripts']);
-}
-if(!has_action('wp_enqueue_scripts', ['ldc', '_enqueue_scripts'])){
-    add_action('wp_enqueue_scripts', ['ldc', '_enqueue_scripts']);
-}
-
-// Load theme functions.
-if(!has_action('after_setup_theme', ['ldc', '_setup_theme'])){
-    add_action('after_setup_theme', ['ldc', '_setup_theme']);
-}
+// Load JavaScript methods.
+add_action('admin_enqueue_scripts', ['ldc', '_enqueue_scripts']);
+add_action('login_enqueue_scripts', ['ldc', '_enqueue_scripts']);
+add_action('wp_enqueue_scripts', ['ldc', '_enqueue_scripts']);
 
 // Wait for the `plugins_loaded` action hook.
 add_action('plugins_loaded', function(){
+
+    // Check for updates as soon as possible.
+    $update_checker = ldc::plugin_update_checker();
+    if(is_wp_error($update_checker)){
+        ldc::add_admin_notice($update_checker->get_error_message(), 'error');
+    }
 
     // Fires after the plugin is loaded.
     do_action('ldc_loaded');
@@ -68,6 +51,13 @@ add_action('plugins_loaded', function(){
 
 // Wait for the `after_setup_theme` action hook.
 add_action('after_setup_theme', function(){
+
+    // Load the functions for the active theme, for both parent and child theme if applicable.
+    foreach(wp_get_active_and_valid_themes() as $theme){
+        if(file_exists($theme . '/ldc-functions.php')){
+            require_once $theme . '/ldc-functions.php';
+        }
+    }
 
     // Fires after the theme is loaded.
     do_action('after_setup_ldc');

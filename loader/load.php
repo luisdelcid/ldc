@@ -4,12 +4,14 @@ if(!class_exists('ldc')){
 	final class ldc {
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		private static $cache = [];
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         //
         // Hardcoded
         //
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		public static $branding = 'LDC';
 
         /**
          * WARNING: This function’s access is marked private.
@@ -20,314 +22,31 @@ if(!class_exists('ldc')){
     		if(self::scripts_maybe_doing_it_wrong()){
                 return; // Too early.
             }
-            $file = plugin_dir_path(dirname(__FILE__)) . 'js/ldc.js';
+            $file = plugin_dir_path(__FILE__) . 'load-scripts.js';
+			$handle = self::plugin_slug();
     		if(file_exists($file)){
+				$object_name = self::plugin_prefix('l10n');
                 $src = self::path_to_url($file);
+				$var = self::plugin_prefix();
         		$ver = filemtime($file);
         		wp_enqueue_script('stackframe', 'https://cdn.jsdelivr.net/npm/stackframe@1.3.4/stackframe.min.js', [], '1.3.4');
         		wp_enqueue_script('error-stack-parser', 'https://cdn.jsdelivr.net/npm/error-stack-parser@2.1.4/error-stack-parser.min.js', ['stackframe'], '2.1.4');
-        		wp_enqueue_script('ldc', $src, ['error-stack-parser', 'jquery', 'underscore', 'utils', 'wp-api', 'wp-hooks'], $ver, true);
-        		wp_localize_script('ldc', 'ldc', [
+        		wp_enqueue_script($handle, $src, ['error-stack-parser', 'jquery', 'underscore', 'utils', 'wp-api', 'wp-hooks'], $ver, true);
+				$l10n = [
         			'home_url' => home_url(),
 					'locale' => get_locale(),
         			'mu_plugins_url' => WPMU_PLUGIN_URL,
         			'plugins_url' => WP_PLUGIN_URL,
         			'site_url' => site_url(),
-        		]);
+        		];
+				self::localize_script($handle, $l10n);
     		}
-            $file = plugin_dir_path(dirname(__FILE__)) . 'css/ldc.css';
+            $file = plugin_dir_path(__FILE__) . 'load-styles.css';
             if(file_exists($file)){
                 $src = self::path_to_url($file);
                 $ver = filemtime($file);
-                wp_enqueue_style('ldc', $src, [], $ver);
+                wp_enqueue_style($handle, $src, [], $ver);
             }
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * WARNING: This function’s access is marked private.
-         *
-         * This function MUST be called inside the 'tgmpa_register' action hook.
-         *
-    	 * @return void
-    	 */
-        public static function _maybe_tgmpa_register(){
-            if(!doing_action('tgmpa_register')){
-    			return; // Too early or too late.
-    		}
-            $group = 'tgmpa';
-            $tgmpa = self::cache_all($group);
-    		foreach($tgmpa as $args){
-    			self::tgmpa($args['plugins'], $args['config']);
-    		}
-    		$group = 'tgmpa_plugins';
-            $plugins = self::cache_all($group);
-    		if(!$plugins){
-    			return;
-    		}
-    		self::tgmpa($plugins, [
-    			'id' => 'ldc-plugins',
-    			'menu' => 'ldc-plugin-install',
-    			'parent_slug' => 'plugins.php',
-    		    'strings' => [
-    				'menu_title' => 'LDC',
-    				'page_title' => __('Add Plugins'),
-    		    ],
-    		]);
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * WARNING: This function’s access is marked private.
-         *
-         * This function MUST be called inside the 'after_setup_theme' action hook.
-         *
-         * @return void
-         */
-        public static function _setup_theme(){
-    		if(!doing_action('after_setup_theme')){
-                return; // Too early or too late.
-            }
-            foreach(wp_get_active_and_valid_themes() as $theme){
-                if(file_exists($theme . '/ldc-functions.php')){
-                    require_once $theme . '/ldc-functions.php'; // Load the functions for the active theme, for both parent and child theme if applicable.
-                }
-            }
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return void
-         */
-        public static function add_hiding_rule($args = []){
-            if(is_multisite()){
-        		return; // The rewrite rules are not for WordPress MU networks.
-        	}
-        	$pairs = [
-                'capability' => '',
-                'exclude_other_media' => [],
-                'exclude_public_media' => false,
-                'file' => '',
-        		'subdir' => '',
-        	];
-            $args = shortcode_atts($pairs, $args);
-        	$md5 = self::md5($args);
-        	$uploads_use_yearmonth_folders = false;
-            $subdir = self::unslashit($args['subdir']);
-        	if($subdir){
-        		$subdir = '/(' . $subdir . ')';
-        	} else {
-        		if(get_option('uploads_use_yearmonth_folders')){
-        			$subdir = '/(\d{4})/(\d{2})';
-        			$uploads_use_yearmonth_folders = true;
-        		}
-        	}
-        	$upload_dir = wp_get_upload_dir();
-        	if($upload_dir['error']){
-        		return;
-        	}
-            $atts = [];
-            $path = self::get_shortinit_dir() . 'readfile.php';
-            if(!file_exists($path)){
-                return;
-            }
-        	$tmp = str_replace(wp_normalize_path(ABSPATH), '', wp_normalize_path($path));
-        	$parts = explode('/', $tmp);
-        	$levels = count($parts);
-        	$query = self::path_to_url($path);
-        	$regex = $upload_dir['baseurl'] . $subdir. '/(.+)';
-        	if($uploads_use_yearmonth_folders){
-        		$atts['yyyy'] = '$1';
-        		$atts['mm'] = '$2';
-        		$atts['file'] = '$3';
-        	} else {
-        		$atts['subdir'] = '$1';
-        		$atts['file'] = '$2';
-        	}
-        	$atts['levels'] = $levels;
-            $atts['md5'] = $md5;
-            $value = [
-                'capability' => $args['capability'],
-                'exclude_other_media' => $args['exclude_other_media'],
-                'exclude_public_media' => $args['exclude_public_media'],
-            ];
-            $option = 'ldc_hiding_rule_' . $md5;
-            update_option($option, $value, 'no');
-        	$query = add_query_arg($atts, $query);
-        	self::add_external_rule($regex, $query, $args['file']);
-        }
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return void
-         */
-        public static function add_inline_script($data = '', $position = 'after'){
-            if(self::scripts_maybe_doing_it_wrong()){
-                return; // Too early.
-            }
-            return wp_add_inline_script('ldc', $data, $position);
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return void
-         */
-        public static function add_inline_style($data = ''){
-    		if(self::scripts_maybe_doing_it_wrong()){
-                return; // Too early.
-            }
-            return wp_add_inline_style('ldc', $data);
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return string|WP_Error
-         */
-        public static function context_enqueue($context = '', $handle = '', $src = '', $deps = [], $ver = false, $args_media = true, $l10n = []){
-            if(doing_action($context . '_enqueue_scripts')){
-                return self::enqueue_dependency($handle, $src, $deps, $ver, $args_media, $l10n); // Just in time.
-            }
-            if(did_action($context . '_enqueue_scripts')){
-    			return self::doing_it_wrong(__FUNCTION__); // Too late.
-            }
-    		if(!in_array($context, ['admin', 'login', 'wp'])){
-    			return self::doing_it_wrong(__FUNCTION__);
-    		}
-            if(!$handle){
-                $error_msg = __('The "%s" argument must be a non-empty string.');
-                $error_msg = sprintf($error_msg, 'handle');
-                return self::error($error_msg);
-            }
-            $dependency = [
-                'args_media' => $args_media,
-                'deps' => $deps,
-                'handle' => $handle,
-    			'l10n' => $l10n,
-                'src' => $src,
-                'ver' => $ver,
-            ];
-            $md5 = self::md5($dependency);
-    		self::add_action_once($context . '_enqueue_scripts', [__CLASS__, 'maybe_enqueue_' . $context . '_dependencies']);
-            self::cache_set($context . '_dependencies', $md5, $dependency);
-            return $handle;
-        }
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return void
-         */
-        public static function enqueue_script($handle = '', $src = '', $deps = [], $ver = false, $args = [], $l10n = []){
-    		if(self::scripts_maybe_doing_it_wrong()){
-                return; // Too early.
-            }
-    		$handle = sanitize_title($handle);
-            if(!$handle){
-                return;
-            }
-            if(!wp_http_validate_url($src)){
-                if(!is_file($src)){
-                    return;
-                }
-                if(!$ver){
-                    $ver = filemtime($src);
-                }
-                $src = self::path_to_url($src);
-            }
-            $filename = self::basename($src);
-            $mimes = [
-                'js' => 'application/javascript',
-            ];
-            $filetype = wp_check_filetype($filename, $mimes);
-            if(!$filetype['ext']){
-                return;
-            }
-            if(!in_array('ldc', $deps)){
-                $deps[] = 'ldc';
-            }
-            wp_enqueue_script($handle, $src, $deps, $ver, $args);
-            if($l10n){
-                self::localize_script($handle, $l10n);
-            }
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return void
-         */
-        public static function enqueue_style($handle = '', $src = '', $deps = [], $ver = false, $media = 'all'){
-    		if(self::scripts_maybe_doing_it_wrong()){
-                return; // Too early.
-            }
-    		$handle = sanitize_title($handle);
-            if(!$handle){
-                return;
-            }
-            if(!wp_http_validate_url($src)){
-                if(!is_file($src)){
-                    return;
-                }
-                if(!$ver){
-                    $ver = filemtime($src);
-                }
-                $src = self::path_to_url($src);
-            }
-            $filename = self::basename($src);
-            $mimes = [
-                'css' => 'text/css',
-            ];
-            $filetype = wp_check_filetype($filename, $mimes);
-            if(!$filetype['ext']){
-                return;
-            }
-            if(!in_array('ldc', $deps)){
-                $deps[] = 'ldc';
-            }
-            wp_enqueue_style($handle, $src, $deps, $ver, $media);
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return WP_Error
-         */
-        public static function error($message = '', $data = ''){
-    		if(is_wp_error($message)){
-    			return $message;
-    		}
-    		if(!$message){
-    			$message = __('An error occurred.'); // Something went wrong.
-    		}
-    		if(class_exists('ldc\error')){
-    			return new \ldc\error('ldc_error', $message, $data);
-    		}
-    		return new \WP_Error('ldc_error', $message, $data); // Backcompat.
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return object|WP_Error
-         */
-        public static function get_instance($class = ''){
-    		if(!class_exists($class)){
-    			return self::missing_params($class);
-    		}
-            $parent = 'ldc\singleton';
-            if(!class_exists($parent)){
-    			return self::missing_params($parent);
-    		}
-    		if(!is_subclass_of($class, $parent)){
-    			return self::invalid_params($class);
-    		}
-    		return call_user_func([$class, 'get_instance']);
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -336,84 +55,7 @@ if(!class_exists('ldc')){
          * @return string
          */
         public static function get_shortinit_dir(){
-    		return plugin_dir_path(__FILE__) . 'shortinit';
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return string|WP_Error
-         */
-        public static function get_upload_dir($subdir = ''){
-    		$upload_dir = wp_get_upload_dir();
-    		if($upload_dir['error']){
-    			return self::error($upload_dir['error']);
-    		}
-            $basedir = self::path_join($upload_dir['basedir'], 'ldc');
-            $target = self::path_join($basedir, $subdir);
-    		return self::mkdir_p($target);
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * WARNING: This function’s access is marked private.
-         *
-         * @return string
-         */
-        public static function global_cache_key(){
-    		static $global = '';
-    		if($global){
-    			return $global;
-    		}
-    		$global = 'ldc_cache';
-    		if(!isset($GLOBALS[$global])){
-    			$GLOBALS[$global] = []; // Set.
-    		}
-    		if(!is_array($GLOBALS[$global])){
-    			$GLOBALS[$global] = []; // Reset.
-    		}
-    		return $global;
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return string
-         */
-        public static function str_prefix($str = '', $prefix = ''){
-			$str = sanitize_text_field($str);
-    		if(!$str){
-    			return '';
-    		}
-    		$prefix = self::canonicalize($prefix);
-			if(!$prefix){
-    			return $str;
-    		}
-    		if(self::str_starts_with($str, $prefix)){
-    			return $str; // Text is already prefixed.
-    		}
-    		return $prefix . '_' . $str;
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return string
-         */
-        public static function str_slug($str = '', $slug = ''){
-			$str = sanitize_text_field($str);
-    		if(!$str){
-    			return '';
-    		}
-    		$slug = sanitize_title($slug);
-			if(!$slug){
-    			return $str;
-    		}
-    		if(self::str_starts_with($str, $slug)){
-    			return $str; // Text is already slugged.
-    		}
-    		return $slug . '-' . $str;
+    		return plugin_dir_path(dirname(__FILE__)) . 'shortinit';
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1267,40 +909,6 @@ if(!class_exists('ldc')){
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         //
-        // Branding
-        //
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-    	 * @return string
-    	 */
-        public static function get_branding($context = ''){
-    	    $branding = self::$branding;
-			if($context === 'prefix'){
-				return self::canonicalize($branding);
-			}
-			if($context === 'slug'){
-				return self::slugify($branding);
-			}
-			return $branding;
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-    	 * @return bool
-    	 */
-        public static function set_branding($branding = ''){
-			$branding = trim($branding);
-			if(preg_match('/^[A-Za-z0-9].*[A-Za-z0-9]$/', $branding) === 1){
-				self::$branding = $branding;
-				return true;
-			}
-			return false;
-    	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        //
         // Cache
         //
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1317,12 +925,11 @@ if(!class_exists('ldc')){
     		} else {
     			$group = 'default';
     		}
-    		$global = self::global_cache_key();
-    		if(!isset($GLOBALS[$global][$group])){
-    			$GLOBALS[$global][$group] = []; // Set.
+    		if(!isset(self::$cache[$group])){
+    			self::$cache[$group] = []; // Set.
     		}
-    		if(!is_array($GLOBALS[$global][$group])){
-    			$GLOBALS[$global][$group] = []; // Reset.
+    		if(!is_array(self::$cache[$group])){
+    			self::$cache[$group] = []; // Reset.
     		}
     		return $group;
     	}
@@ -1358,12 +965,11 @@ if(!class_exists('ldc')){
     		if(is_null($data)){
     	        return false;
     	    }
-    		$global = self::global_cache_key();
     		$group = self::_sanitize_cache_group($group);
-    		if(isset($GLOBALS[$global][$group][$key])){
+    		if(isset(self::$cache[$group][$key])){
     			return false;
     		}
-    		$GLOBALS[$global][$group][$key] = $data;
+    		self::$cache[$group][$key] = $data;
     	    return true;
     	}
 
@@ -1375,9 +981,8 @@ if(!class_exists('ldc')){
     	 * @return array
     	 */
         public static function cache_all($group = ''){
-    		$global = self::global_cache_key();
     		$group = self::_sanitize_cache_group($group);
-    	    return $GLOBALS[$global][$group];
+    	    return self::$cache[$group];
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1392,12 +997,11 @@ if(!class_exists('ldc')){
     	    if(!$key){
     	        return false;
     	    }
-    		$global = self::global_cache_key();
     		$group = self::_sanitize_cache_group($group);
-    		if(!isset($GLOBALS[$global][$group][$key])){
+    		if(!isset(self::$cache[$group][$key])){
     			return false;
     		}
-    		unset($GLOBALS[$global][$group][$key]);
+    		unset(self::$cache[$group][$key]);
     	    return true;
     	}
 
@@ -1413,9 +1017,8 @@ if(!class_exists('ldc')){
     	    if(!$key){
     	        return false;
     	    }
-    		$global = self::global_cache_key();
     		$group = self::_sanitize_cache_group($group);
-    	    return isset($GLOBALS[$global][$group][$key]);
+    	    return isset(self::$cache[$group][$key]);
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1423,7 +1026,7 @@ if(!class_exists('ldc')){
         /**
     	 * Retrieves the cache contents, if it exists.
     	 *
-    	 * @return bool
+    	 * @return mixed
     	 */
         public static function cache_get($key = '', $group = ''){
     		$default_value = null;
@@ -1431,12 +1034,11 @@ if(!class_exists('ldc')){
     	    if(!$key){
     	        return $default_value;
     	    }
-    		$global = self::global_cache_key();
     		$group = self::_sanitize_cache_group($group);
-    		if(!isset($GLOBALS[$global][$group][$key])){
+    		if(!isset(self::$cache[$group][$key])){
     			return $default_value;
     		}
-    	    return $GLOBALS[$global][$group][$key];
+    	    return self::$cache[$group][$key];
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1542,16 +1144,15 @@ if(!class_exists('ldc')){
     		if(is_null($data)){
     	        return false;
     	    }
-    		$global = self::global_cache_key();
     		$group = self::_sanitize_cache_group($group);
-    		if(!isset($GLOBALS[$global][$group][$key])){
+    		if(!isset(self::$cache[$group][$key])){
     			return false;
     		}
-    		$old_value = $GLOBALS[$global][$group][$key];
+    		$old_value = self::$cache[$group][$key];
     		if($data === $old_value){
     			return false;
     		}
-    		$GLOBALS[$global][$group][$key] = $data;
+    		self::$cache[$group][$key] = $data;
     	    return true;
     	}
 
@@ -1570,17 +1171,16 @@ if(!class_exists('ldc')){
     		if(is_null($data)){
     	        return false;
     	    }
-    		$global = self::global_cache_key();
     		$group = self::_sanitize_cache_group($group);
-    		if(isset($GLOBALS[$global][$group][$key])){
-    			$old_value = $GLOBALS[$global][$group][$key];
+    		if(isset(self::$cache[$group][$key])){
+    			$old_value = self::$cache[$group][$key];
     		} else {
     			$old_value = null;
     		}
     		if($data === $old_value){
     			return false;
     		}
-    		$GLOBALS[$global][$group][$key] = $data;
+    		self::$cache[$group][$key] = $data;
     	    return true;
     	}
 
@@ -2229,11 +1829,134 @@ if(!class_exists('ldc')){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 		/**
+		 * This function MUST be called inside the 'admin_enqueue_scripts' action hook.
+		 *
+		 * @return void
+		 */
+		public static function _maybe_enqueue_admin_assets(){
+			if(!doing_action('admin_enqueue_scripts')){
+				return; // Too early or too late.
+			}
+			$key = 'admin_dependencies';
+			if(!self::cache_exists($key)){
+				return;
+			}
+			$dependencies = self::cache_get($key);
+			foreach($dependencies as $dependency){
+				self::enqueue_dependency($dependency['handle'], $dependency['src'], $dependency['deps'], $dependency['ver'], $dependency['args_media'], $dependency['l10n']);
+			}
+		}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		/**
+		 * This function MUST be called inside the 'wp_enqueue_scripts' action hook.
+		 *
+		 * @return void
+		 */
+		public static function _maybe_enqueue_wp_assets(){
+			if(!doing_action('wp_enqueue_scripts')){
+				return; // Too early or too late.
+			}
+			$key = 'wp_dependencies';
+			if(!self::cache_exists($key)){
+				return;
+			}
+			$dependencies = self::cache_get($key);
+			foreach($dependencies as $dependency){
+				self::enqueue_dependency($dependency['handle'], $dependency['src'], $dependency['deps'], $dependency['ver'], $dependency['args_media'], $dependency['l10n']);
+			}
+		}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		/**
+		 * This function MUST be called inside the 'wp_enqueue_scripts' action hook.
+		 *
+		 * @return void
+		 */
+		public static function _maybe_enqueue_login_assets(){
+			if(!doing_action('login_enqueue_scripts')){
+				return; // Too early or too late.
+			}
+			$key = 'login_dependencies';
+			if(!self::cache_exists($key)){
+				return;
+			}
+			$dependencies = self::cache_get($key);
+			foreach($dependencies as $dependency){
+				self::enqueue_dependency($dependency['handle'], $dependency['src'], $dependency['deps'], $dependency['ver'], $dependency['args_media'], $dependency['l10n']);
+			}
+		}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+         * @return void
+         */
+        public static function add_inline_script($data = '', $position = 'after'){
+            if(self::scripts_maybe_doing_it_wrong()){
+                return; // Too early.
+            }
+			$handle = self::plugin_slug();
+            return wp_add_inline_script($handle, $data, $position);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+         * @return void
+         */
+        public static function add_inline_style($data = ''){
+    		if(self::scripts_maybe_doing_it_wrong()){
+                return; // Too early.
+            }
+			$handle = self::plugin_slug();
+            return wp_add_inline_style($handle, $data);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		/**
 		 * @return string|WP_Error
 		 */
 		public static function admin_enqueue($handle = '', $src = '', $deps = [], $ver = false, $args_media = null, $l10n = []){
 			return self::context_enqueue('admin', $handle, $src, $deps, $ver, $args_media, $l10n);
 		}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+         * @return string|WP_Error
+         */
+        public static function context_enqueue($context = '', $handle = '', $src = '', $deps = [], $ver = false, $args_media = true, $l10n = []){
+            if(doing_action($context . '_enqueue_scripts')){
+                return self::enqueue_dependency($handle, $src, $deps, $ver, $args_media, $l10n); // Just in time.
+            }
+            if(did_action($context . '_enqueue_scripts')){
+    			return self::doing_it_wrong(__FUNCTION__); // Too late.
+            }
+    		if(!in_array($context, ['admin', 'login', 'wp'])){
+    			return self::doing_it_wrong(__FUNCTION__);
+    		}
+            if(!$handle){
+                $error_msg = __('The "%s" argument must be a non-empty string.');
+                $error_msg = sprintf($error_msg, 'handle');
+                return self::error($error_msg);
+            }
+            $dependency = [
+                'args_media' => $args_media,
+                'deps' => $deps,
+                'handle' => $handle,
+    			'l10n' => $l10n,
+                'src' => $src,
+                'ver' => $ver,
+            ];
+            $md5 = self::md5($dependency);
+    		self::add_action_once($context . '_enqueue_scripts', [__CLASS__, '_maybe_enqueue_' . $context . '_dependencies']);
+            self::cache_set($context . '_dependencies', $md5, $dependency);
+            return $handle;
+        }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -2286,11 +2009,95 @@ if(!class_exists('ldc')){
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+        /**
+         * @return void
+         */
+        public static function enqueue_script($handle = '', $src = '', $deps = [], $ver = false, $args = [], $l10n = []){
+    		if(self::scripts_maybe_doing_it_wrong()){
+                return; // Too early.
+            }
+    		$handle = sanitize_title($handle);
+            if(!$handle){
+                return;
+            }
+            if(!wp_http_validate_url($src)){
+                if(!is_file($src)){
+                    return;
+                }
+                if(!$ver){
+                    $ver = filemtime($src);
+                }
+                $src = self::path_to_url($src);
+            }
+            $filename = self::basename($src);
+            $mimes = [
+                'js' => 'application/javascript',
+            ];
+            $filetype = wp_check_filetype($filename, $mimes);
+            if(!$filetype['ext']){
+                return;
+            }
+			$dep = self::plugin_slug();
+            if(!in_array($dep, $deps)){
+                $deps[] = $dep;
+            }
+            wp_enqueue_script($handle, $src, $deps, $ver, $args);
+            if($l10n){
+                self::localize_script($handle, $l10n);
+            }
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+         * @return void
+         */
+        public static function enqueue_style($handle = '', $src = '', $deps = [], $ver = false, $media = 'all'){
+    		if(self::scripts_maybe_doing_it_wrong()){
+                return; // Too early.
+            }
+    		$handle = sanitize_title($handle);
+            if(!$handle){
+                return;
+            }
+            if(!wp_http_validate_url($src)){
+                if(!is_file($src)){
+                    return;
+                }
+                if(!$ver){
+                    $ver = filemtime($src);
+                }
+                $src = self::path_to_url($src);
+            }
+            $filename = self::basename($src);
+            $mimes = [
+                'css' => 'text/css',
+            ];
+            $filetype = wp_check_filetype($filename, $mimes);
+            if(!$filetype['ext']){
+                return;
+            }
+			$dep = self::plugin_slug();
+            if(!in_array($dep, $deps)){
+                $deps[] = $dep;
+            }
+            wp_enqueue_style($handle, $src, $deps, $ver, $media);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 		/**
 		 * @return bool
 		 */
 		public static function localize_script($handle = '', $l10n = []){
-			return wp_localize_script($handle, self::canonicalize($handle) . '_object', $l10n);
+			$object_name = self::str_prefix('l10n', $handle);
+			$result = wp_localize_script($handle, $object_name, $l10n);
+			if($result){
+				$var = self::canonicalize($handle);
+				$data = "_.isUndefined($var)||($var.l10n=$object_name)";
+				wp_add_inline_script($handle, $data);
+			}
+			return $result;
 		}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2300,69 +2107,6 @@ if(!class_exists('ldc')){
 		 */
 		public static function login_enqueue($handle = '', $src = '', $deps = [], $ver = false, $args_media = null, $l10n = []){
 			return self::context_enqueue('login', $handle, $src, $deps, $ver, $args_media, $l10n);
-		}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		/**
-		 * This function MUST be called inside the 'admin_enqueue_scripts' action hook.
-		 *
-		 * @return void
-		 */
-		public static function maybe_enqueue_admin_assets(){
-			if(!doing_action('admin_enqueue_scripts')){
-				return; // Too early or too late.
-			}
-			$key = 'admin_dependencies';
-			if(!self::cache_exists($key)){
-				return;
-			}
-			$dependencies = self::cache_get($key);
-			foreach($dependencies as $dependency){
-				self::enqueue_dependency($dependency['handle'], $dependency['src'], $dependency['deps'], $dependency['ver'], $dependency['args_media'], $dependency['l10n']);
-			}
-		}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		/**
-		 * This function MUST be called inside the 'wp_enqueue_scripts' action hook.
-		 *
-		 * @return void
-		 */
-		public static function maybe_enqueue_wp_assets(){
-			if(!doing_action('wp_enqueue_scripts')){
-				return; // Too early or too late.
-			}
-			$key = 'wp_dependencies';
-			if(!self::cache_exists($key)){
-				return;
-			}
-			$dependencies = self::cache_get($key);
-			foreach($dependencies as $dependency){
-				self::enqueue_dependency($dependency['handle'], $dependency['src'], $dependency['deps'], $dependency['ver'], $dependency['args_media'], $dependency['l10n']);
-			}
-		}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-		/**
-		 * This function MUST be called inside the 'wp_enqueue_scripts' action hook.
-		 *
-		 * @return void
-		 */
-		public static function maybe_enqueue_login_assets(){
-			if(!doing_action('login_enqueue_scripts')){
-				return; // Too early or too late.
-			}
-			$key = 'login_dependencies';
-			if(!self::cache_exists($key)){
-				return;
-			}
-			$dependencies = self::cache_get($key);
-			foreach($dependencies as $dependency){
-				self::enqueue_dependency($dependency['handle'], $dependency['src'], $dependency['deps'], $dependency['ver'], $dependency['args_media'], $dependency['l10n']);
-			}
 		}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2439,12 +2183,31 @@ if(!class_exists('ldc')){
     	 */
         public static function doing_it_wrong($function = '', $arguments = []){
             $error_msg = __('Function %1$s was called <strong>incorrectly</strong>. %2$s %3$s');
-            $error_msg = sprintf($error_msg, $function, '', '');
+            $error_msg = sprintf($error_msg, '<strong>' . $function . '</strong>', '', '');
     		if($function){
     			$error_msg = preg_replace('/\s+/', ' ', $error_msg);
     		}
     		$error_msg = trim($error_msg);
     		return self::error($error_msg, $arguments);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+         * @return WP_Error
+         */
+        public static function error($message = '', $data = ''){
+    		if(is_wp_error($message)){
+    			return $message;
+    		}
+    		if(!$message){
+    			$message = __('An error occurred.'); // Something went wrong.
+    		}
+			$error = self::plugin_prefix('error');
+    		if(class_exists($error)){
+    			return new $error($error, $message, $data);
+    		}
+    		return new \WP_Error($error, $message, $data); // Backcompat.
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -2865,6 +2628,22 @@ if(!class_exists('ldc')){
     		$output = sanitize_text_field($output[1]);
     		$output = explode(' ', $output);
     		return (int) $output[1];
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+         * @return string|WP_Error
+         */
+        public static function get_upload_dir($subdir = ''){
+    		$upload_dir = wp_get_upload_dir();
+    		if($upload_dir['error']){
+    			return self::error($upload_dir['error']);
+    		}
+			$dir = self::plugin_slug();
+            $basedir = self::path_join($upload_dir['basedir'], $dir);
+            $target = self::path_join($basedir, $subdir);
+    		return self::mkdir_p($target);
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -3929,6 +3708,69 @@ if(!class_exists('ldc')){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /**
+         * @return void
+         */
+        public static function add_hiding_rule($args = []){
+            if(is_multisite()){
+        		return; // The rewrite rules are not for WordPress MU networks.
+        	}
+        	$pairs = [
+                'capability' => '',
+                'exclude_other_media' => [],
+                'exclude_public_media' => false,
+                'file' => '',
+        		'subdir' => '',
+        	];
+            $args = shortcode_atts($pairs, $args);
+        	$md5 = self::md5($args);
+        	$uploads_use_yearmonth_folders = false;
+            $subdir = self::unslashit($args['subdir']);
+        	if($subdir){
+        		$subdir = '/(' . $subdir . ')';
+        	} else {
+        		if(get_option('uploads_use_yearmonth_folders')){
+        			$subdir = '/(\d{4})/(\d{2})';
+        			$uploads_use_yearmonth_folders = true;
+        		}
+        	}
+        	$upload_dir = wp_get_upload_dir();
+        	if($upload_dir['error']){
+        		return;
+        	}
+            $atts = [];
+            $path = self::get_shortinit_dir() . 'readfile.php';
+            if(!file_exists($path)){
+                return;
+            }
+        	$tmp = str_replace(wp_normalize_path(ABSPATH), '', wp_normalize_path($path));
+        	$parts = explode('/', $tmp);
+        	$levels = count($parts);
+        	$query = self::path_to_url($path);
+        	$regex = $upload_dir['baseurl'] . $subdir. '/(.+)';
+        	if($uploads_use_yearmonth_folders){
+        		$atts['yyyy'] = '$1';
+        		$atts['mm'] = '$2';
+        		$atts['file'] = '$3';
+        	} else {
+        		$atts['subdir'] = '$1';
+        		$atts['file'] = '$2';
+        	}
+        	$atts['levels'] = $levels;
+            $atts['md5'] = $md5;
+            $value = [
+                'capability' => $args['capability'],
+                'exclude_other_media' => $args['exclude_other_media'],
+                'exclude_public_media' => $args['exclude_public_media'],
+            ];
+			$option = self::plugin_prefix('hiding_rule_' . $md5);
+            update_option($option, $value, 'no');
+        	$query = add_query_arg($atts, $query);
+        	self::add_external_rule($regex, $query, $args['file']);
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
     	 * @return string
     	 */
         public static function breadcrumbs($breadcrumbs = [], $separator = ''){
@@ -4133,6 +3975,25 @@ if(!class_exists('ldc')){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /**
+         * @return object|WP_Error
+         */
+        public static function get_instance($class = ''){
+    		if(!class_exists($class)){
+    			return self::missing_params($class);
+    		}
+			$parent = self::plugin_prefix('singleton');
+            if(!class_exists($parent)){
+    			return self::missing_params($parent);
+    		}
+    		if(!is_subclass_of($class, $parent)){
+    			return self::invalid_params($class);
+    		}
+    		return call_user_func([$class, 'get_instance']);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
     	 * @return string
     	 */
         public static function get_redirect_to($fallback = ''){
@@ -4229,6 +4090,38 @@ if(!class_exists('ldc')){
             $mofile = WP_LANG_DIR . '/admin-' . $locale . '.mo';
             return file_exists($mofile) ? load_textdomain($domain, $mofile, $locale) : false;
     	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool
+    	 */
+        public static function load_front_textdomain($domain = 'default'){
+            if(!is_admin()){
+                return false;
+            }
+            $locale = determine_locale();
+            $mofile = WP_LANG_DIR . '/' . $locale . '.mo';
+            return file_exists($mofile) ? load_textdomain($domain, $mofile, $locale) : false;
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		/**
+		 * @return bool
+		 */
+		public static function menu_page_exists($slug = ''){
+			global $menu;
+			if(is_null($menu)){
+				return false;
+			}
+			foreach($menu as $item){
+		        if(isset($item[2]) && $item[2] === $slug){
+		            return true;
+		        }
+		    }
+			return false;
+		}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -4873,6 +4766,175 @@ if(!class_exists('ldc')){
                 'validation_class' => self::plugin_update_checker_class(),
                 'zipball_url' => $url,
             ]);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        //
+        // Plugin Hooks
+        //
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return string
+    	 */
+        public static function add_plugin_action($hook_name = '', $callback = null, $priority = 10, $accepted_args = 1){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return self::on($hook_name, $callback, $priority, $accepted_args);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return string
+    	 */
+        public static function add_plugin_action_once($hook_name = '', $callback = null, $priority = 10, $accepted_args = 1){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return self::one($hook_name, $callback, $priority, $accepted_args);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return string
+    	 */
+        public static function add_plugin_filter($hook_name = '', $callback = null, $priority = 10, $accepted_args = 1){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return self::on($hook_name, $callback, $priority, $accepted_args);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return string
+    	 */
+        public static function add_plugin_filter_once($hook_name = '', $callback = null, $priority = 10, $accepted_args = 1){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return self::one($hook_name, $callback, $priority, $accepted_args);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return mixed
+    	 */
+        public static function apply_plugin_filters($hook_name = '', $value = null, ...$arg){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return apply_filters($hook_name, $value, ...$arg);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool
+    	 */
+        public static function did_plugin_action($hook_name = ''){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return did_action($hook_name);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool
+    	 */
+        public static function did_plugin_filter($hook_name = ''){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return did_filter($hook_name);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return void
+    	 */
+        public static function do_plugin_action($hook_name = '', ...$arg){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    do_action($hook_name, ...$arg);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return void
+    	 */
+        public static function do_plugin_action_ref_array($hook_name = '', ...$arg){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    do_action_ref_array($hook_name, ...$arg);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool
+    	 */
+        public static function doing_plugin_action($hook_name = ''){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return doing_filter($hook_name);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool
+    	 */
+        public static function doing_plugin_filter($hook_name = ''){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return doing_filter($hook_name);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool
+    	 */
+        public static function has_plugin_action($hook_name = '', $callback = false){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return has_filter($hook_name, $callback);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool
+    	 */
+        public static function has_plugin_filter($hook_name = '', $callback = false){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return has_filter($hook_name, $callback);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool
+    	 */
+        public static function remove_plugin_action($hook_name = '', $callback = false){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return remove_filter($hook_name, $callback);
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool
+    	 */
+        public static function remove_plugin_filter($hook_name = '', $callback = false){
+			$hook_name = self::plugin_hook_name($hook_name);
+		    return remove_filter($hook_name, $callback);
+    	}
+
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		//
+		// These functions’ access is marked private. This means they are not intended for use by plugin or theme developers, only in other core functions.
+		//
+		// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return string
+    	 */
+        public static function plugin_hook_name($hook_name = ''){
+			$file = self::caller_file(2); // Two levels above.
+		    $hook_name = self::plugin_prefix($hook_name, $file);
+		    return $hook_name;
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -5535,6 +5597,9 @@ if(!class_exists('ldc')){
     	 * @return string|WP_Error
     	 */
         public static function remote_download($url = '', $args = []){
+            if(!did_action('plugins_loaded')){
+    			return self::doing_it_wrong(__FUNCTION__); // Too early.
+            }
             if(!$url){
                 $error_msg = __('No URL Provided.');
                 return self::error($error_msg);
@@ -6466,6 +6531,46 @@ if(!class_exists('ldc')){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /**
+         * @return string
+         */
+        public static function str_prefix($str = '', $prefix = ''){
+			$prefix = self::canonicalize($prefix);
+			$str = sanitize_text_field($str);
+    		if(!$str){
+    			return $prefix;
+    		}
+			if(!$prefix){
+    			return $str;
+    		}
+    		if(self::str_starts_with($str, $prefix)){
+    			return $str; // Text is already prefixed.
+    		}
+    		return $prefix . '_' . $str;
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+         * @return string
+         */
+        public static function str_slug($str = '', $slug = ''){
+			$slug = self::slugify($slug);
+			$str = sanitize_text_field($str);
+    		if(!$str){
+    			return $slug;
+    		}
+			if(!$slug){
+    			return $str;
+    		}
+    		if(self::str_starts_with($str, $slug)){
+    			return $str; // Text is already slugged.
+    		}
+    		return $slug . '-' . $str;
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
     	 * @return string
     	 */
         public static function str_split($str = '', $line_length = 55){
@@ -6576,17 +6681,37 @@ if(!class_exists('ldc')){
         /**
          * WARNING: This function’s access is marked private.
          *
-    	 * @return bool|WP_Error
+         * This function MUST be called inside the 'tgmpa_register' action hook.
+         *
+    	 * @return void
     	 */
-        public static function _use_tgm_plugin_activation(){
-            $ver = self::tgmpa_ver();
-            $url = 'https://github.com/TGMPA/TGM-Plugin-Activation/archive/refs/tags/' . $ver . '.zip';
-            return self::use([
-                'autoload' => 'class-tgm-plugin-activation.php',
-    			'expected_dir' => 'TGM-Plugin-Activation-' . $ver,
-                'validation_function' => 'tgmpa',
-                'zipball_url' => $url,
-            ]);
+        public static function _maybe_tgmpa_register(){
+            if(!doing_action('tgmpa_register')){
+    			return; // Too early or too late.
+    		}
+            $group = 'tgmpa';
+            $tgmpa = self::cache_all($group);
+    		foreach($tgmpa as $args){
+    			self::tgmpa($args['plugins'], $args['config']);
+    		}
+    		$group = 'tgmpa_plugins';
+            $plugins = self::cache_all($group);
+    		if(!$plugins){
+    			return;
+    		}
+			$id = self::plugin_slug('tgmpa');
+			$menu = self::plugin_slug('tgmpa-install-plugins');
+			$menu_title = self::get_plugin_data('Name');
+    		self::tgmpa($plugins, [
+				'capability' => 'install_plugins',
+    			'id' => $id,
+    			'menu' => $menu,
+    			'parent_slug' => 'plugins.php',
+				'strings' => [
+					'menu_title' => $menu_title,
+					'page_title' => esc_attr(sprintf(_x('Install %s', 'plugin'), __('Plugins'))),
+				],
+    		]);
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -6662,6 +6787,22 @@ if(!class_exists('ldc')){
             }
             $ver = $set; // Set.
             return $ver;
+    	}
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return bool|WP_Error
+    	 */
+        public static function use_tgm_plugin_activation(){
+            $ver = self::tgmpa_ver();
+            $url = 'https://github.com/TGMPA/TGM-Plugin-Activation/archive/refs/tags/' . $ver . '.zip';
+            return self::use([
+                'autoload' => 'class-tgm-plugin-activation.php',
+    			'expected_dir' => 'TGM-Plugin-Activation-' . $ver,
+                'validation_function' => 'tgmpa',
+                'zipball_url' => $url,
+            ]);
     	}
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -7179,6 +7320,99 @@ if(!class_exists('ldc')){
                 'timeout' => $timeout,
             ];
             return self::remote_request($method, $url, $args);
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	}
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Errors
+//
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if(!class_exists('ldc_error') && class_exists('WP_Error')){
+	final class ldc_error extends \WP_Error {
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		/**
+		 * @return WP_error
+		 */
+        public function __call($name, $arguments){
+            $code = __CLASS__;
+            $error_msg = __('Function %1$s was called <strong>incorrectly</strong>. %2$s %3$s');
+            $error_msg = sprintf($error_msg, $name, '', '');
+    		$error_msg = trim($error_msg);
+            return new self($code, $error_msg, $arguments); // Recursive.
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	}
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Helpers
+//
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if(!class_exists('ldc_helper')){
+	class ldc_helper {
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		const helper = ldc::class;
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+	}
+}
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Singletons
+//
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+if(!class_exists('ldc_singleton')){
+	class ldc_singleton {
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		const helper = ldc::class;
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		static private $instances = [];
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		/**
+         * @return self
+         */
+        static public function get_instance(){
+            $class = get_called_class();
+            $md5 = md5($class);
+            if(isset(self::$instances[$md5])){
+                return self::$instances[$md5];
+            }
+            self::$instances[$md5] = new $class();
+            return self::$instances[$md5];
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * This function MUST be overridden in a subclass.
+    	 *
+    	 * @return void
+    	 */
+        protected function __construct(){
+            // Silence is golden.
         }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
