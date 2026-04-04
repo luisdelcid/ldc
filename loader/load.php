@@ -4368,7 +4368,7 @@ if(!class_exists('ldc')){
                     }
                 }
             }
-            $dir = self::remote_package($atts['zipball_url']);
+            $dir = self::download_package($atts['zipball_url']);
             if(is_wp_error($dir)){
                 return $dir;
             }
@@ -5454,6 +5454,207 @@ if(!class_exists('ldc')){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /**
+    	 * @return string|WP_Error
+    	 */
+        public static function download_package($url = '', $args = []){
+            if(!$url){
+                $error_msg = __('No URL Provided.');
+                return self::error($error_msg);
+        	}
+            $group = 'packages';
+    		$key = self::uuid($url . '-' . self::md5($args));
+            if(self::cache_exists($key, $group)){
+                return self::cache_get($key, $group);
+            }
+            $dir = self::get_upload_dir('pkg/' . $key);
+            if(is_wp_error($dir)){
+                self::cache_set($key, $dir, $group);
+                return $dir;
+            }
+            $ret = self::fs_dirlist($dir, false);
+    		if(is_wp_error($ret)){
+                self::cache_set($key, $ret, $group);
+                return $ret;
+            }
+            if($ret){
+                self::cache_set($key, $dir, $group);
+                return $dir;
+            }
+            $file = self::download_url($url, $args);
+            if(is_wp_error($file)){
+                self::cache_set($key, $file, $group);
+                return $file;
+            }
+            $extension = pathinfo($file, PATHINFO_EXTENSION);
+            if($extension !== 'zip'){
+                $error_msg = __('Only .zip archives may be uploaded.');
+                $error = self::error($error_msg);
+                self::cache_set($key, $error, $group);
+                return $error;
+            }
+            $result = unzip_file($file, $dir);
+    		if(is_wp_error($result)){
+                self::cache_set($key, $result, $group);
+    			return $result;
+    		}
+            $ret = self::fs_dirlist($dir, false);
+    		if(is_wp_error($ret)){
+                self::cache_set($key, $ret, $group);
+                return $ret;
+            }
+            if($ret){
+                self::cache_set($key, $dir, $group);
+                return $dir;
+            }
+            $error_msg = __('Empty archive.');
+            $error = self::error($error_msg);
+            self::cache_set($key, $error, $group);
+            return $error;
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+    	 * @return string|WP_Error
+    	 */
+        public static function download_url($url = '', $args = []){
+            if(!did_action('plugins_loaded')){
+    			return self::doing_it_wrong(__FUNCTION__); // Too early.
+            }
+            if(!$url){
+                $error_msg = __('No URL Provided.');
+                return self::error($error_msg);
+        	}
+            $group = 'downloads';
+            $key = self::uuid($url . '-' . self::md5($args));
+            if(self::cache_exists($key, $group)){
+                return self::cache_get($key, $group);
+            }
+            $dir = self::get_upload_dir('tmp/' . $key);
+            if(is_wp_error($dir)){
+                self::cache_set($key, $dir, $group);
+                return $dir;
+            }
+            $ret = self::fs_list_files($dir, false);
+    		if(is_wp_error($ret)){
+                self::cache_set($key, $ret, $group);
+                return $ret;
+            }
+            if($ret){
+                $filename = array_key_first($ret);
+                $file = path_join($dir, $filename);
+                self::cache_set($key, $file, $group);
+                return $file;
+            }
+            $args = self::sanitize_remote_request_args($args, $url);
+            $new_filename = '';
+            if(isset($args['filename'])){
+                $new_filename = wp_basename($args['filename']);
+                if(!self::is_valid_filename($new_filename)){
+                    $new_filename = '';
+                }
+                unset($args['filename']);
+            }
+            $url_filename = self::basename($url);
+            if(!function_exists('wp_tempnam')){
+    			require_once(ABSPATH . 'wp-admin/includes/file.php');
+    		}
+            $tmpfname = wp_tempnam($url_filename, $dir); // @uses wp_generate_password()
+        	if(!$tmpfname){
+                $error_msg = __('Could not create temporary file.');
+                $error = self::error($error_msg);
+                self::cache_set($key, $error, $group);
+        		return $error;
+        	}
+            $args['filename'] = $tmpfname;
+            $args['stream'] = true;
+            $response = self::remote_get($url, $args);
+            if(!$response->status){
+                self::cache_set($key, $response->wp_error, $group);
+                self::fs_delete($tmpfname);
+                return $response->wp_error;
+            }
+            if(isset($response->headers['Content-Disposition'])){
+                $content_disposition = $response->headers['Content-Disposition'];
+                $content_disposition = strtolower($content_disposition);
+                if(self::str_starts_with($content_disposition, 'attachment; filename=')){
+        			$tmpfname_disposition = sanitize_file_name(substr($content_disposition, 21));
+        		} else {
+        			$tmpfname_disposition = '';
+        		}
+                // Potential file name must be valid string.
+        		if($tmpfname_disposition && is_string($tmpfname_disposition) && validate_file($tmpfname_disposition) === 0){
+        			$tmpfname_disposition = dirname($tmpfname) . '/' . $tmpfname_disposition;
+                    if(self::fs_move($tmpfname, $tmpfname_disposition)){
+                        $tmpfname = $tmpfname_disposition;
+                    }
+        		}
+            }
+            // Allow uploading images from URLs without extensions.
+            if(isset($response->headers['content-type'])){
+                $mime_type = $response->headers['content-type'];
+                if($mime_type && pathinfo($tmpfname, PATHINFO_EXTENSION) === 'tmp'){
+            		$valid_mime_types = array_flip(get_allowed_mime_types());
+            		if(!empty($valid_mime_types[$mime_type])){
+            			$extensions = explode('|', $valid_mime_types[$mime_type]);
+            			$new_image_name = substr($tmpfname, 0, -4) . ".{$extensions[0]}";
+            			if(validate_file($new_image_name) === 0){
+                            if(self::fs_move($tmpfname, $new_image_name)){
+                                $tmpfname = $new_image_name;
+                            }
+            			}
+            		}
+            	}
+            }
+            if(isset($response->headers['Content-MD5'])){
+                $content_md5 = $response->headers['Content-MD5'];
+                $md5_check = verify_file_md5($tmpfname, $content_md5);
+        		if(is_wp_error($md5_check)){
+                    self::cache_set($key, $md5_check, $group);
+                    self::fs_delete($tmpfname);
+        			return $md5_check;
+        		}
+            }
+            if($new_filename){
+                $new_filename = self::unique_filename($dir, $new_filename);
+                if(self::fs_move($tmpfname, $new_filename)){
+                    $tmpfname = $new_filename;
+                }
+                self::cache_set($key, $tmpfname, $group);
+                return $tmpfname;
+            }
+            if(self::is_valid_filename($url_filename)){
+                $new_filename = self::unique_filename($dir, $url_filename);
+                if(self::fs_move($tmpfname, $new_filename)){
+                    $tmpfname = $new_filename;
+                }
+                self::cache_set($key, $tmpfname, $group);
+                return $tmpfname;
+            }
+            $filetype = wp_check_filetype($tmpfname);
+            if($filetype['ext']){
+                self::cache_set($key, $tmpfname, $group);
+                return $tmpfname;
+            }
+            $filetype = wp_check_filetype_and_ext($tmpfname, $url_filename);
+            if($filetype['proper_filename']){
+                $new_filename = self::unique_filename($dir, $filetype['proper_filename']);
+                if(self::fs_move($tmpfname, $new_filename)){
+                    $tmpfname = $new_filename;
+                }
+                self::cache_set($key, $tmpfname, $group);
+                return $tmpfname;
+            }
+            $error_msg = __('Sorry, you are not allowed to upload this file type.');
+            $error = self::error($error_msg);
+            self::cache_set($key, $error, $group);
+            self::fs_delete($tmpfname);
+            return $error;
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
     	 * @return string
     	 */
         public static function get_remote_country($default = ''){
@@ -5594,146 +5795,6 @@ if(!class_exists('ldc')){
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
         /**
-    	 * @return string|WP_Error
-    	 */
-        public static function remote_download($url = '', $args = []){
-            if(!did_action('plugins_loaded')){
-    			return self::doing_it_wrong(__FUNCTION__); // Too early.
-            }
-            if(!$url){
-                $error_msg = __('No URL Provided.');
-                return self::error($error_msg);
-        	}
-            $group = 'remote_downloads';
-            $key = self::uuid($url . '-' . self::md5($args));
-            if(self::cache_exists($key, $group)){
-                return self::cache_get($key, $group);
-            }
-            $dir = self::get_upload_dir('downloads/' . $key);
-            if(is_wp_error($dir)){
-                self::cache_set($key, $dir, $group);
-                return $dir;
-            }
-            $ret = self::fs_list_files($dir, false);
-    		if(is_wp_error($ret)){
-                self::cache_set($key, $ret, $group);
-                return $ret;
-            }
-            if($ret){
-                $filename = array_key_first($ret);
-                $file = path_join($dir, $filename);
-                self::cache_set($key, $file, $group);
-                return $file;
-            }
-            $args = self::sanitize_remote_request_args($args, $url);
-            $new_filename = '';
-            if(isset($args['filename'])){
-                $new_filename = wp_basename($args['filename']);
-                if(!self::is_valid_filename($new_filename)){
-                    $new_filename = '';
-                }
-                unset($args['filename']);
-            }
-            $url_filename = self::basename($url);
-            if(!function_exists('wp_tempnam')){
-    			require_once(ABSPATH . 'wp-admin/includes/file.php');
-    		}
-            $tmpfname = wp_tempnam($url_filename, $dir);
-        	if(!$tmpfname){
-                $error_msg = __('Could not create temporary file.');
-                $error = self::error($error_msg);
-                self::cache_set($key, $error, $group);
-        		return $error;
-        	}
-            $args['filename'] = $tmpfname;
-            $args['stream'] = true;
-            $response = self::remote_get($url, $args);
-            if(!$response->status){
-                self::cache_set($key, $response->wp_error, $group);
-                self::fs_delete($tmpfname);
-                return $response->wp_error;
-            }
-            if(isset($response->headers['Content-Disposition'])){
-                $content_disposition = $response->headers['Content-Disposition'];
-                $content_disposition = strtolower($content_disposition);
-                if(self::str_starts_with($content_disposition, 'attachment; filename=')){
-        			$tmpfname_disposition = sanitize_file_name(substr($content_disposition, 21));
-        		} else {
-        			$tmpfname_disposition = '';
-        		}
-                // Potential file name must be valid string.
-        		if($tmpfname_disposition && is_string($tmpfname_disposition) && validate_file($tmpfname_disposition) === 0){
-        			$tmpfname_disposition = dirname($tmpfname) . '/' . $tmpfname_disposition;
-                    if(self::fs_move($tmpfname, $tmpfname_disposition)){
-                        $tmpfname = $tmpfname_disposition;
-                    }
-        		}
-            }
-            // Allow uploading images from URLs without extensions.
-            if(isset($response->headers['content-type'])){
-                $mime_type = $response->headers['content-type'];
-                if($mime_type && pathinfo($tmpfname, PATHINFO_EXTENSION) === 'tmp'){
-            		$valid_mime_types = array_flip(get_allowed_mime_types());
-            		if(!empty($valid_mime_types[$mime_type])){
-            			$extensions = explode('|', $valid_mime_types[$mime_type]);
-            			$new_image_name = substr($tmpfname, 0, -4) . ".{$extensions[0]}";
-            			if(validate_file($new_image_name) === 0){
-                            if(self::fs_move($tmpfname, $new_image_name)){
-                                $tmpfname = $new_image_name;
-                            }
-            			}
-            		}
-            	}
-            }
-            if(isset($response->headers['Content-MD5'])){
-                $content_md5 = $response->headers['Content-MD5'];
-                $md5_check = verify_file_md5($tmpfname, $content_md5);
-        		if(is_wp_error($md5_check)){
-                    self::cache_set($key, $md5_check, $group);
-                    self::fs_delete($tmpfname);
-        			return $md5_check;
-        		}
-            }
-            if($new_filename){
-                $new_filename = self::unique_filename($dir, $new_filename);
-                if(self::fs_move($tmpfname, $new_filename)){
-                    $tmpfname = $new_filename;
-                }
-                self::cache_set($key, $tmpfname, $group);
-                return $tmpfname;
-            }
-            if(self::is_valid_filename($url_filename)){
-                $new_filename = self::unique_filename($dir, $url_filename);
-                if(self::fs_move($tmpfname, $new_filename)){
-                    $tmpfname = $new_filename;
-                }
-                self::cache_set($key, $tmpfname, $group);
-                return $tmpfname;
-            }
-            $filetype = wp_check_filetype($tmpfname);
-            if($filetype['ext']){
-                self::cache_set($key, $tmpfname, $group);
-                return $tmpfname;
-            }
-            $filetype = wp_check_filetype_and_ext($tmpfname, $url_filename);
-            if($filetype['proper_filename']){
-                $new_filename = self::unique_filename($dir, $filetype['proper_filename']);
-                if(self::fs_move($tmpfname, $new_filename)){
-                    $tmpfname = $new_filename;
-                }
-                self::cache_set($key, $tmpfname, $group);
-                return $tmpfname;
-            }
-            $error_msg = __('Sorry, you are not allowed to upload this file type.');
-            $error = self::error($error_msg);
-            self::cache_set($key, $error, $group);
-            self::fs_delete($tmpfname);
-            return $error;
-        }
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
     	 * @return stdClass
     	 */
         public static function remote_get($url = '', $args = []){
@@ -5757,67 +5818,6 @@ if(!class_exists('ldc')){
         public static function remote_options($url = '', $args = []){
     		return self::remote_request('options', $url, $args);
     	}
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-    	 * @return string|WP_Error
-    	 */
-        public static function remote_package($url = '', $args = []){
-            if(!$url){
-                $error_msg = __('No URL Provided.');
-                return self::error($error_msg);
-        	}
-            $group = 'remote_packages';
-    		$key = self::uuid($url . '-' . self::md5($args));
-            if(self::cache_exists($key, $group)){
-                return self::cache_get($key, $group);
-            }
-            $dir = self::get_upload_dir('packages/' . $key);
-            if(is_wp_error($dir)){
-                self::cache_set($key, $dir, $group);
-                return $dir;
-            }
-            $ret = self::fs_dirlist($dir, false);
-    		if(is_wp_error($ret)){
-                self::cache_set($key, $ret, $group);
-                return $ret;
-            }
-            if($ret){
-                self::cache_set($key, $dir, $group);
-                return $dir;
-            }
-            $file = self::remote_download($url, $args);
-            if(is_wp_error($file)){
-                self::cache_set($key, $file, $group);
-                return $file;
-            }
-            $extension = pathinfo($file, PATHINFO_EXTENSION);
-            if($extension !== 'zip'){
-                $error_msg = __('Only .zip archives may be uploaded.');
-                $error = self::error($error_msg);
-                self::cache_set($key, $error, $group);
-                return $error;
-            }
-            $result = unzip_file($file, $dir);
-    		if(is_wp_error($result)){
-                self::cache_set($key, $result, $group);
-    			return $result;
-    		}
-            $ret = self::fs_dirlist($dir, false);
-    		if(is_wp_error($ret)){
-                self::cache_set($key, $ret, $group);
-                return $ret;
-            }
-            if($ret){
-                self::cache_set($key, $dir, $group);
-                return $dir;
-            }
-            $error_msg = __('Empty archive.');
-            $error = self::error($error_msg);
-            self::cache_set($key, $error, $group);
-            return $error;
-        }
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
