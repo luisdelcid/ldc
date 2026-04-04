@@ -5,15 +5,15 @@ Tags: ldc
 Tested up to: 6.9.4
 Requires at least: 5.6
 Requires PHP: 5.6
-Stable tag: 26.3.31
+Stable tag: 26.4.1
 License: GPL v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-A collection of methods for WordPress plugins and themes.
+A collection of methods for WordPress.
 
 == Description ==
 
-A collection of methods for WordPress plugins and themes.
+A collection of methods for WordPress.
 
 = For themes =
 
