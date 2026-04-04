@@ -2,7 +2,7 @@
 /*
  * Plugin Name: LDC
  * Plugin URI: https://github.com/luisdelcid/ldc
- * Description: A personal collection of useful methods for WordPress plugins and themes.
+ * Description: A collection of methods for WordPress plugins and themes.
  * Version: 26.3.31
  * Requires at least: 5.6
  * Requires PHP: 5.6
