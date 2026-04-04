@@ -757,6 +757,18 @@ if(!class_exists('ldc')){
         /**
          * @return bool
          */
+        public static function bb_is_builder_active(){
+    		if(!class_exists('FLBuilderModel')){
+    			return false;
+    		}
+        	return \FLBuilderModel::is_builder_active();
+        }
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+         * @return bool
+         */
         public static function bb_is_fa5_enabled(){
     		if(!self::bb_is_theme_enabled()){
     			return false;
