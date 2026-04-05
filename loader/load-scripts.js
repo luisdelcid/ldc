@@ -12,7 +12,7 @@
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    class helper {
+    class ldc {
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         //
@@ -28,29 +28,6 @@
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-        /**
-         * @return mixed
-         */
-        static object_property(key = '', object_name = ''){
-            var object = null;
-            if(!key){
-                return null;
-            }
-            if(_.isEmpty(object_name) && !_.isUndefined(helper.l10n)){
-                object = helper.l10n;
-            } else if(!_.isEmpty(object_name) && !_.isUndefined(window[object_name])){
-                object = window[object_name];
-            } else {
-                return null;
-            }
-            if(_.isUndefined(object[key])){
-                return null;
-            }
-            return object[key];
-        };
-
-        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         //
         // Error Handling
         //
@@ -60,9 +37,10 @@
          * @return string
          */
         static caller_url(index = 0){
-            var debug_backtrace = null;
-            index = helper.absint(index) + 1;
-            debug_backtrace = helper.debug_backtrace(index);
+            var $this = this,
+                debug_backtrace = null;
+            index = $this.absint(index) + 1;
+            debug_backtrace = $this.debug_backtrace(index);
             if(_.isNull(debug_backtrace)){
                 return '';
             }
@@ -78,7 +56,8 @@
          * @return string
          */
         static debug_backtrace(index = 0){
-            var backtrace = [],
+            var $this = this,
+                backtrace = [],
                 error = null,
                 fake_function = null,
                 limit = 0;
@@ -87,11 +66,11 @@
             } catch(e){
                 error = e;
             }
-            backtrace = helper.debug_context(error);
+            backtrace = $this.debug_context(error);
             if(_.isEmpty(backtrace)){
                 return null;
             }
-            index = helper.absint(index) + 1;
+            index = $this.absint(index) + 1;
             limit = index + 1;
             if(limit > backtrace.length){
                 return null;
@@ -140,7 +119,8 @@
          * @return void
          */
         static add_action(hook_name = '', callback = null, priority = 10){
-            wp.hooks.addAction(hook_name, helper.namespace(), callback, priority);
+            var $this = this;
+            wp.hooks.addAction(hook_name, $this.namespace(), callback, priority);
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -149,7 +129,8 @@
          * @return void
          */
         static add_filter(hook_name = '', callback = null, priority = 10){
-            wp.hooks.addFilter(hook_name, helper.namespace(), callback, priority);
+            var $this = this;
+            wp.hooks.addFilter(hook_name, $this.namespace(), callback, priority);
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -230,7 +211,8 @@
          * @return bool
          */
         static has_action(hook_name = ''){
-            return wp.hooks.hasAction(hook_name, helper.namespace());
+            var $this = this;
+            return wp.hooks.hasAction(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -239,7 +221,8 @@
          * @return bool
          */
         static has_filter(hook_name = ''){
-            return wp.hooks.hasFilter(hook_name, helper.namespace());
+            var $this = this;
+            return wp.hooks.hasFilter(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -248,7 +231,8 @@
          * @return int|void
          */
         static remove_action(hook_name = ''){
-            return wp.hooks.removeAction(hook_name, helper.namespace());
+            var $this = this;
+            return wp.hooks.removeAction(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -257,7 +241,8 @@
          * @return int|void
          */
         static remove_all_actions(hook_name = ''){
-            return wp.hooks.removeAllActions(hook_name, helper.namespace());
+            var $this = this;
+            return wp.hooks.removeAllActions(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -266,7 +251,8 @@
          * @return int|void
          */
         static remove_all_filters(hook_name = ''){
-            return wp.hooks.removeAllFilters(hook_name, helper.namespace());
+            var $this = this;
+            return wp.hooks.removeAllFilters(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -275,7 +261,8 @@
          * @return int|void
          */
         static remove_filter(hook_name = ''){
-            return wp.hooks.removeFilter(hook_name, helper.namespace());
+            var $this = this;
+            return wp.hooks.removeFilter(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -300,7 +287,8 @@
          * @return object|null
          */
         static get_instance(class_name = ''){
-            var parent = helper.plugin_prefix('singleton');
+            var $this = this,
+                parent = $this.plugin_prefix('singleton');
             if(!class_name){
                 return null;
             }
@@ -310,7 +298,7 @@
             if(!_.isFunction(window[parent])){
                 return null;
             }
-            if(!helper.is_subclass_of(window[class_name], parent)){
+            if(!$this.is_subclass_of(window[class_name], parent)){
                 return null;
             }
             return window[class_name].get_instance();
@@ -353,6 +341,30 @@
          */
         static is_true(data = ''){
             return (-1 < $.inArray(String(data), ['1', 'on', 'true']));
+        };
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        /**
+         * @return mixed
+         */
+        static object_property(key = '', object_name = ''){
+            var $this = this,
+                object = null;
+            if(!key){
+                return null;
+            }
+            if(_.isEmpty(object_name) && !_.isUndefined($this.l10n)){
+                object = $this.l10n;
+            } else if(!_.isEmpty(object_name) && !_.isUndefined(window[object_name])){
+                object = window[object_name];
+            } else {
+                return null;
+            }
+            if(_.isUndefined(object[key])){
+                return null;
+            }
+            return object[key];
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -809,11 +821,12 @@
          * @return bool
          */
         static add_plugin_action(hook_name = '', callback = null, priority = 10){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
-            wp.hooks.addAction(hook_name, helper.namespace(), callback, priority);
+            wp.hooks.addAction(hook_name, $this.namespace(), callback, priority);
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -822,11 +835,12 @@
          * @return bool
          */
         static add_plugin_filter(hook_name = '', callback = null, priority = 10){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
-            wp.hooks.addFilter(hook_name, helper.namespace(), callback, priority);
+            wp.hooks.addFilter(hook_name, $this.namespace(), callback, priority);
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -835,7 +849,8 @@
          * @return mixed
          */
         static apply_plugin_filters(hook_name = '', value = null, ...arg){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
@@ -866,7 +881,8 @@
          * @return int|void
          */
         static did_plugin_action(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
@@ -879,7 +895,8 @@
          * @return int|void
          */
         static did_plugin_action(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
@@ -892,7 +909,8 @@
          * @return void
          */
         static do_plugin_action(hook_name = '', ...arg){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
@@ -905,7 +923,8 @@
          * @return bool
          */
         static doing_plugin_action(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
@@ -918,7 +937,8 @@
          * @return bool
          */
         static doing_plugin_filter(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
@@ -931,11 +951,12 @@
          * @return bool
          */
         static has_plugin_action(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return false;
             }
-            return wp.hooks.hasAction(hook_name, helper.namespace());
+            return wp.hooks.hasAction(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -944,11 +965,12 @@
          * @return bool
          */
         static has_plugin_filter(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return false;
             }
-            return wp.hooks.hasFilter(hook_name, helper.namespace());
+            return wp.hooks.hasFilter(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -959,8 +981,9 @@
          * @return string
          */
         static plugin_hook_name(hook_name = ''){
-            var url = helper.caller_url(2); // Two levels above.
-            hook_name = helper.plugin_prefix(hook_name, url);
+            var $this = this,
+                url = $this.caller_url(2); // Two levels above.
+            hook_name = $this.plugin_prefix(hook_name, url);
             return hook_name;
         };
 
@@ -970,11 +993,12 @@
          * @return int|void
          */
         static remove_plugin_action(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
-            return wp.hooks.removeAction(hook_name, helper.namespace());
+            return wp.hooks.removeAction(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -983,11 +1007,12 @@
          * @return int|void
          */
         static remove_all_plugin_actions(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
-            return wp.hooks.removeAllActions(hook_name, helper.namespace());
+            return wp.hooks.removeAllActions(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -996,11 +1021,12 @@
          * @return int|void
          */
         static remove_all_plugin_filters(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
-            return wp.hooks.removeAllFilters(hook_name, helper.namespace());
+            return wp.hooks.removeAllFilters(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1009,11 +1035,12 @@
          * @return int|void
          */
         static remove_plugin_filter(hook_name = ''){
-            hook_name = helper.plugin_hook_name(hook_name);
+            var $this = this;
+            hook_name = $this.plugin_hook_name(hook_name);
             if(hook_name === ''){
                 return;
             }
-            return wp.hooks.removeFilter(hook_name, helper.namespace());
+            return wp.hooks.removeFilter(hook_name, $this.namespace());
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1026,12 +1053,13 @@
          * @return string
          */
         static plugin_folder(url = ''){
-            var folder = '',
-                mu_plugins_url = helper.mu_plugins_url(),
+            var $this = this,
+                folder = '',
+                mu_plugins_url = $this.mu_plugins_url(),
                 path = '',
-                plugins_url = helper.plugins_url();
+                plugins_url = $this.plugins_url();
             if(_.isEmpty(url)){
-                url = helper.caller_url(1); // One level above.
+                url = $this.caller_url(1); // One level above.
             }
             if(!url){
                 return '';
@@ -1056,15 +1084,16 @@
          * @return string
          */
         static plugin_prefix(str = '', url = ''){
-            var plugin_folder = '';
+            var $this = this,
+                plugin_folder = '';
             if(_.isEmpty(url)){
-                url = helper.caller_url(1); // One level above.
+                url = $this.caller_url(1); // One level above.
             }
-            plugin_folder = helper.plugin_folder(url);
+            plugin_folder = $this.plugin_folder(url);
             if(_.isEmpty(plugin_folder)){
                 return '';
             }
-            return helper.str_prefix(str, plugin_folder);
+            return $this.str_prefix(str, plugin_folder);
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1073,15 +1102,16 @@
          * @return string
          */
         static plugin_slug(str = '', url = ''){
-            var plugin_folder = '';
+            var $this = this,
+                plugin_folder = '';
             if(!url){
-                url = helper.caller_url(1); // One level above.
+                url = $this.caller_url(1); // One level above.
             }
-            plugin_folder = helper.plugin_folder(url);
+            plugin_folder = $this.plugin_folder(url);
             if(!plugin_folder){
                 return '';
             }
-            return helper.str_slug(str, plugin_folder);
+            return $this.str_slug(str, plugin_folder);
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1094,8 +1124,9 @@
          * @return string
          */
         static canonicalize(str = ''){
+            var $this = this;
             str = str.replaceAll('\\', '_'); // Fix namespaces.
-            str = helper.sanitize_title(str);
+            str = $this.sanitize_title(str);
             str = str.replaceAll('-', '_'); // Fix slugified.
             return str.replace(/^_+|_+$/g, '');
         };
@@ -1106,8 +1137,9 @@
          * @return string
          */
         static remove_accents(str = '', locale = ''){
+            var $this = this;
             if(locale === ''){
-                locale = helper.get_locale();
+                locale = $this.get_locale();
             }
             // Assume UTF-8.
             if(locale.startsWith('de')){
@@ -1195,8 +1227,9 @@
          * @return string
          */
         static sanitize_title(str = ''){
-            str = helper.remove_accents(str);
-            str = helper.sanitize_title_with_dashes(str);
+            var $this = this;
+            str = $this.remove_accents(str);
+            str = $this.sanitize_title_with_dashes(str);
             return str;
         };
 
@@ -1220,8 +1253,9 @@
          * @return string
          */
         static slugify(str = ''){
+            var $this = this;
             str = str.replaceAll('\\', '_'); // Fix namespaces.
-            str = helper.sanitize_title(str);
+            str = $this.sanitize_title(str);
             str = str.replaceAll('_', '-'); // Fix canonicalized.
             return str.replace(/^-+|-+$/g, '');
         };
@@ -1232,8 +1266,9 @@
          * @return string
          */
         static str_prefix(str = '', prefix = ''){
-            prefix = helper.canonicalize(prefix);
-            str = helper.remove_whitespaces(str);
+            var $this = this;
+            prefix = $this.canonicalize(prefix);
+            str = $this.remove_whitespaces(str);
             if(!str){
                 return prefix;
             }
@@ -1252,8 +1287,9 @@
          * @return string
          */
         static str_slug(str = '', slug = ''){
-            slug = helper.slugify(slug);
-            str = helper.remove_whitespaces(str);
+            var $this = this;
+            slug = $this.slugify(slug);
+            str = $this.remove_whitespaces(str);
             if(!str){
                 return slug;
             }
@@ -1276,9 +1312,10 @@
          * @return string
          */
         static add_query_arg(key = '', value = '', url = ''){
-            var a = {},
+            var $this = this,
+                a = {},
                 href = '';
-            a = helper.get_a(url);
+            a = $this.get_a(url);
             if(a.protocol){
                 href += a.protocol + '//';
             }
@@ -1296,7 +1333,7 @@
             }
             if(a.search){
                 var search = [],
-                    search_object = helper.parse_str(a.search);
+                    search_object = $this.parse_str(a.search);
                 $.each(search_object, function(k, v){
                     if(k != key){
                         search.push(k + '=' + v);
@@ -1323,9 +1360,10 @@
          * @return string
          */
         static add_query_args(args = [], url = ''){
-            var a = {},
+            var $this = this,
+                a = {},
                 href = '';
-            a = helper.get_a(url);
+            a = $this.get_a(url);
             if(a.protocol){
                 href += a.protocol + '//';
             }
@@ -1343,7 +1381,7 @@
             }
             if(a.search){
                 var search = [],
-                    search_object = helper.parse_str(a.search);
+                    search_object = $this.parse_str(a.search);
                 $.each(search_object, function(k, v){
                     if(!(k in args)){
                         search.push(k + '=' + v);
@@ -1388,7 +1426,8 @@
          * @return string
          */
         static get_locale(){
-            var locale = helper.object_property('locale');
+            var $this = this,
+                locale = $this.object_property('locale');
             return (_.isNull(locale) ? '' : locale);
         };
 
@@ -1398,8 +1437,9 @@
          * @return string
          */
         static get_query_arg(key = '', url = ''){
-            var search_object = {};
-            search_object = helper.get_query_args(url);
+            var $this = this,
+                search_object = {};
+            search_object = $this.get_query_args(url);
             if(!_.isUndefined(search_object[key])){
                 return search_object[key];
             }
@@ -1412,10 +1452,11 @@
          * @return object
          */
         static get_query_args(url = ''){
-            var a = {};
-            a = helper.get_a(url);
+            var $this = this,
+                a = {};
+            a = $this.get_a(url);
             if(a.search){
-                return helper.parse_str(a.search);
+                return $this.parse_str(a.search);
             }
             return {};
         };
@@ -1426,7 +1467,8 @@
          * @return string
          */
         static home_url(){
-            var home_url = helper.object_property('home_url');
+            var $this = this,
+                home_url = $this.object_property('home_url');
             return (_.isNull(home_url) ? '' : home_url);
         };
 
@@ -1436,7 +1478,8 @@
          * @return string
          */
         static mu_plugins_url(){
-            var mu_plugins_url = helper.object_property('mu_plugins_url');
+            var $this = this,
+                mu_plugins_url = $this.object_property('mu_plugins_url');
             return (_.isNull(mu_plugins_url) ? '' : mu_plugins_url);
         };
 
@@ -1460,10 +1503,11 @@
          * @return object|string
          */
         static parse_url(url = '', component = ''){
-            var a = {},
+            var $this = this,
+                a = {},
                 components = {},
                 keys = ['protocol', 'hostname', 'port', 'pathname', 'search', 'hash'];
-            a = helper.get_a(url);
+            a = $this.get_a(url);
             if(_.isUndefined(component) || component === ''){
                 $.map(keys, function(c){
                     components[c] = a[c];
@@ -1482,7 +1526,8 @@
          * @return string
          */
         static plugins_url(){
-            var plugins_url = helper.object_property('plugins_url');
+            var $this = this,
+                plugins_url = $this.object_property('plugins_url');
             return (_.isNull(plugins_url) ? '' : plugins_url);
         };
 
@@ -1492,7 +1537,8 @@
          * @return string
          */
         static site_url(){
-            var site_url = helper.object_property('site_url');
+            var $this = this,
+                site_url = $this.object_property('site_url');
             return (_.isNull(site_url) ? '' : site_url);
         };
 
@@ -1508,7 +1554,8 @@
          * @return string
          */
         static do_visibilitychange(event){
-            helper.do_action('visibilitychange', helper.is_document_hidden()); // Hidden.
+            var $this = event.data;
+            $this.do_action('visibilitychange', $this.is_document_hidden()); // Hidden.
         };
 
         // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1555,9 +1602,10 @@
          * @return void
          */
         static track_document_visibility(){
+            var $this = this;
             $(function(){
-                var event_name = helper.document_visibility_change_event();
-                $(document).on(event_name, helper.do_visibilitychange);
+                var event_name = $this.document_visibility_change_event();
+                $(document).on(event_name, $this, $this.do_visibilitychange);
             });
         };
 
@@ -1567,7 +1615,45 @@
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-    window.ldc = helper;
+    window.ldc = ldc;
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+})(window, jQuery);
+
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//
+// Helpers
+//
+// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+(function(window, $){
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    'use strict';
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    if(!_.isUndefined(window.ldc_helper)){
+        return;
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    class ldc_helper {
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+        static helper = ldc;
+
+        // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    }
+
+    // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    window.ldc_helper = ldc_helper;
 
     // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
