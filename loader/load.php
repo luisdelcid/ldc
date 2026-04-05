@@ -6713,7 +6713,7 @@ if(!class_exists('ldc')){
     		}
 			$id = self::plugin_slug('tgmpa');
 			$menu = self::plugin_slug('tgmpa-install-plugins');
-			$menu_title = self::get_plugin_data('Name');
+			$menu_title = self::plugin_meta('Name');
     		self::tgmpa($plugins, [
 				'capability' => 'install_plugins',
     			'id' => $id,

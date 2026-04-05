@@ -3,7 +3,7 @@
  * Plugin Name: LDC
  * Plugin URI: https://github.com/luisdelcid/ldc
  * Description: A collection of methods for WordPress.
- * Version: 26.4.1
+ * Version: 26.4.2
  * Requires at least: 5.6
  * Requires PHP: 5.6
  * Author: Luis del Cid
