@@ -9101,6 +9101,7 @@ if(!class_exists('LDC') && class_exists('LDC_Singleton')){
                 return $this->error($t->getMessage());
             }
             $this->_register_less_autoloader();
+            $this->_register_plugin_update_checker_autoloader();
             return true;
         }
 
@@ -9219,6 +9220,42 @@ if(!class_exists('LDC') && class_exists('LDC_Singleton')){
                 }
                 $name = substr($class, strlen($prefix));
                 $file = $dir . '/' . str_replace('_', '/', $name) . '.php';
+                if(!file_exists($file)){
+                    return;
+                }
+                require_once $file;
+            });
+        }
+
+		// ---------------------------------------------------------------------
+
+        /**
+         * WARNING: This method’s access is marked private.
+         *
+         * Autoloads Parsedown and PucReadmeParser, the two classes the Plugin
+         * Update Checker keeps in its vendor folder, which its own autoloader
+         * cannot reach once they are prefixed.
+         *
+         * Its autoloader looks for them in the global namespace, or in the
+         * library's own namespace when the whole library was moved to another
+         * one. The scoper does neither: it puts them in LDC\Deps, so they are
+         * never loaded, and the changelog of an update from GitHub — "View
+         * details" in wp-admin — is a fatal error. This loads them under the
+         * names the scoper gave them.
+         *
+    	 * @return void
+    	 */
+        public function _register_plugin_update_checker_autoloader(){
+            $dir = $this->_deps_dir('yahnis-elsts/plugin-update-checker/vendor'); // Hardcoded.
+            $files = [
+                'LDC\Deps\Parsedown' => 'Parsedown.php', // Hardcoded. The prefix must match the one in composer.json.
+                'LDC\Deps\PucReadmeParser' => 'PucReadmeParser.php', // Hardcoded.
+            ];
+            spl_autoload_register(function($class) use ($dir, $files){
+                if(!isset($files[$class])){
+                    return;
+                }
+                $file = $dir . '/' . $files[$class];
                 if(!file_exists($file)){
                     return;
                 }
