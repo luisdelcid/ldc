@@ -31,7 +31,7 @@ if(did_action('ldc')){
     ldc()->use_plugin_update_checker();
 
     // Check for updates.
-    //ldc()->build_update_checker(__FILE__);
+    ldc()->build_update_checker(__FILE__);
 
 } else {
 
