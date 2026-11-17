@@ -49,7 +49,6 @@ class RotatingFileHandler extends StreamHandler
         $this->maxFiles = $maxFiles;
         $this->timezone = $timezone;
         $this->setFilenameFormat($filenameFormat, $dateFormat);
-        $this->nextRotation = $this->getNextRotation();
         parent::__construct($this->getTimedFilename(), $level, $bubble, $filePermission, $useLocking);
     }
     /**
@@ -80,6 +79,7 @@ class RotatingFileHandler extends StreamHandler
         }
         $this->filenameFormat = $filenameFormat;
         $this->url = $this->getTimedFilename();
+        $this->nextRotation = $this->getNextRotation();
         $this->close();
         return $this;
     }
@@ -203,9 +203,11 @@ class RotatingFileHandler extends StreamHandler
     {
         $pattern = self::normalizeDirectorySeparators($this->getGlobPattern());
         // split off the literal directory prefix, so only the subtree the pattern
-        // can actually reach has to be walked
-        $slashPos = strrpos(substr($pattern, 0, strcspn($pattern, '*?[')), '/');
-        $baseDir = \false === $slashPos ? './' : substr($pattern, 0, $slashPos + 1);
+        // can actually reach has to be walked; characters getGlobPattern() escaped
+        // are part of that prefix
+        preg_match('{^(?:[^*?\[]|\[[*?\[]\])*}', $pattern, $literalPrefix);
+        $slashPos = strrpos($literalPrefix[0] ?? '', '/');
+        $baseDir = \false === $slashPos ? './' : strtr(substr($pattern, 0, $slashPos + 1), ['[[]' => '[', '[*]' => '*', '[?]' => '?']);
         $relativePattern = \false === $slashPos ? $pattern : substr($pattern, $slashPos + 1);
         $regex = '#^' . preg_quote($baseDir, '#') . self::globToRegex($relativePattern) . '$#';
         if (!is_dir($baseDir)) {
@@ -274,11 +276,20 @@ class RotatingFileHandler extends StreamHandler
     protected function getGlobPattern(): string
     {
         $fileInfo = pathinfo($this->filename);
-        $glob = str_replace(['{filename}', '{date}'], [$fileInfo['filename'], str_replace(['Y', 'y', 'm', 'd', 'H'], ['[0-9][0-9][0-9][0-9]', '[0-9][0-9]', '[0-9][0-9]', '[0-9][0-9]', '[0-9][0-9]'], $this->dateFormat)], self::appendDirectorySeparator($fileInfo['dirname'] ?? '') . $this->filenameFormat);
+        $glob = str_replace(['{filename}', '{date}'], [self::escapeGlob($fileInfo['filename']), str_replace(['Y', 'y', 'm', 'd', 'H'], ['[0-9][0-9][0-9][0-9]', '[0-9][0-9]', '[0-9][0-9]', '[0-9][0-9]', '[0-9][0-9]'], $this->dateFormat)], self::escapeGlob(self::appendDirectorySeparator($fileInfo['dirname'] ?? '') . $this->filenameFormat));
         if (isset($fileInfo['extension'])) {
-            $glob .= '.' . $fileInfo['extension'];
+            $glob .= '.' . self::escapeGlob($fileInfo['extension']);
         }
         return $glob;
+    }
+    /**
+     * Makes glob metacharacters in a literal part of the pattern match only
+     * themselves, as otherwise "logs[1]/foo.log" would look for its rotated
+     * files in "logs1/".
+     */
+    private static function escapeGlob(string $literal): string
+    {
+        return strtr($literal, ['[' => '[[]', '*' => '[*]', '?' => '[?]']);
     }
     protected function setDateFormat(string $dateFormat): void
     {
@@ -289,9 +300,14 @@ class RotatingFileHandler extends StreamHandler
     }
     protected function getNextRotation(): \DateTimeImmutable
     {
-        return match (str_replace(['/', '_', '.'], '-', $this->dateFormat)) {
-            self::FILE_PER_MONTH => (new \DateTimeImmutable('first day of next month', $this->timezone))->setTime(0, 0, 0),
-            self::FILE_PER_YEAR => (new \DateTimeImmutable('first day of January next year', $this->timezone))->setTime(0, 0, 0),
+        $now = new \DateTimeImmutable('now', $this->timezone);
+        // only the letters matter, whatever separates them (a subclass may allow more than
+        // setDateFormat() does), and anything not clearly hourly/monthly/yearly rotates daily
+        $units = preg_replace('{[^a-zA-Z]+}', '', strtr($this->dateFormat, 'y', 'Y')) ?? '';
+        return match (\true) {
+            str_contains($units, 'H') => $now->setTime((int) $now->format('G') + 1, 0, 0),
+            $units === 'Ym' => (new \DateTimeImmutable('first day of next month', $this->timezone))->setTime(0, 0, 0),
+            $units === 'Y' => (new \DateTimeImmutable('first day of January next year', $this->timezone))->setTime(0, 0, 0),
             default => (new \DateTimeImmutable('tomorrow', $this->timezone))->setTime(0, 0, 0),
         };
     }

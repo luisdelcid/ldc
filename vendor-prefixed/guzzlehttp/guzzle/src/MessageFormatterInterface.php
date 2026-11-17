@@ -1,5 +1,6 @@
 <?php
 
+declare (strict_types=1);
 namespace LDC\Deps\GuzzleHttp;
 
 use LDC\Deps\Psr\Http\Message\RequestInterface;

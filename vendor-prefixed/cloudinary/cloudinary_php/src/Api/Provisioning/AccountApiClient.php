@@ -14,7 +14,6 @@ use LDC\Deps\Cloudinary\Api\BaseApiClient;
 use LDC\Deps\Cloudinary\Configuration\Provisioning\ProvisioningAccountConfig;
 use LDC\Deps\Cloudinary\Configuration\Provisioning\ProvisioningConfiguration;
 use LDC\Deps\Cloudinary\Exception\ConfigurationException;
-use LDC\Deps\GuzzleHttp\Client;
 /**
  * Class AccountApiClient
  *
@@ -52,12 +51,9 @@ class AccountApiClient extends BaseApiClient
         $this->baseUri = sprintf('%s/%s/%s/%s/%s/', $this->api->uploadPrefix, self::apiVersion($this->api->apiVersion), self::PROVISIONING, self::ACCOUNTS, $configuration->provisioningAccount->accountId);
         $this->createHttpClient();
     }
-    protected function createHttpClient(): void
-    {
-        $this->httpClient = new Client($this->buildHttpClientConfig());
-    }
     protected function buildHttpClientConfig(): array
     {
-        return ['auth' => [$this->provisioningAccount->provisioningApiKey, $this->provisioningAccount->provisioningApiSecret], 'base_uri' => $this->baseUri, 'connect_timeout' => $this->api->connectionTimeout, 'timeout' => $this->api->timeout, 'proxy' => $this->api->apiProxy, 'headers' => ['User-Agent' => self::userAgent()], 'http_errors' => \false];
+        $clientConfig = ['auth' => [$this->provisioningAccount->provisioningApiKey, $this->provisioningAccount->provisioningApiSecret], 'base_uri' => $this->baseUri, 'connect_timeout' => $this->api->connectionTimeout, 'timeout' => $this->api->timeout, 'proxy' => $this->api->apiProxy, 'headers' => ['User-Agent' => self::userAgent()], 'http_errors' => \false];
+        return array_merge($clientConfig, self::httpHandlerConfig($this->psrHttpClient));
     }
 }

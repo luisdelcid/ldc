@@ -1,3 +1,25 @@
+3.3.0 / 2026-10-19
+==================
+
+New functionality and features
+------------------------------
+
+  * Add support for custom PSR-18 HTTP clients
+
+3.2.0 / 2026-10-19
+==================
+
+New functionality and features
+------------------------------
+
+  * Add support for `Guzzle 8`
+
+Other Changes
+-------------
+
+  * Fix unsigned upload when API key and secret are not configured
+  * Fix custom HTTP headers with non-string values
+
 3.1.3 / 2026-04-26
 ==================
 

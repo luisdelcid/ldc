@@ -9660,14 +9660,34 @@ if(!class_exists('LDC') && class_exists('LDC_Singleton')){
 		// ---------------------------------------------------------------------
 
         /**
-         * @return string
+         * The version of the Plugin Update Checker in vendor-prefixed, as major
+         * and minor, e.g. '6.0': the two its namespace is named after, v6p0.
+         * Read from Composer, so it follows the library when vendor-prefixed is
+         * rebuilt. A version set with $set takes its place from then on.
+         *
+         * @return string Empty when the library is not there.
          */
         public function plugin_update_checker_ver($set = ''){
-            static $ver = '5.7';
-            if(empty($set)){
+            static $ver = null;
+            if(!empty($set)){
+                $ver = $set; // Set.
+                return $ver;
+            }
+            if(!is_null($ver)){
                 return $ver; // Get.
             }
-            $ver = $set; // Set.
+            $ver = '';
+            if(is_wp_error($this->use_dep('LDC\Deps\Composer\InstalledVersions'))){
+                return $ver;
+            }
+            $package = 'yahnis-elsts/plugin-update-checker'; // Hardcoded.
+            if(!LDC\Deps\Composer\InstalledVersions::isInstalled($package)){
+                return $ver;
+            }
+            $pretty_version = (string) LDC\Deps\Composer\InstalledVersions::getPrettyVersion($package); // E.g. v6.0
+            if(preg_match('/^v?(\d+)\.(\d+)/', $pretty_version, $m)){
+                $ver = $m[1] . '.' . $m[2];
+            }
             return $ver;
     	}
 

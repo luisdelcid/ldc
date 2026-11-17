@@ -12,6 +12,7 @@ namespace LDC\Deps\Cloudinary\Api\Admin;
 
 use LDC\Deps\Cloudinary\Api\ApiClient;
 use LDC\Deps\Cloudinary\Configuration\Configuration;
+use LDC\Deps\Psr\Http\Client\ClientInterface;
 /**
  * Enables Cloudinary Admin API functionality.
  *
@@ -52,5 +53,16 @@ class AdminApi
         $apiV2Configuration = new Configuration($configuration);
         $apiV2Configuration->api->apiVersion = '2';
         $this->apiV2Client = new ApiClient($apiV2Configuration);
+    }
+    /**
+     * Sets a PSR-18 HTTP client for the requests of this API instance, or the default when null.
+     *
+     * @param ClientInterface|null $client The PSR-18 client.
+     */
+    public function setHttpClient(?ClientInterface $client): static
+    {
+        $this->apiClient->setHttpClient($client);
+        $this->apiV2Client->setHttpClient($client);
+        return $this;
     }
 }

@@ -17,6 +17,7 @@ use LDC\Deps\Cloudinary\Asset\AssetType;
 use LDC\Deps\Cloudinary\Configuration\CloudConfig;
 use LDC\Deps\Cloudinary\Utils;
 use LDC\Deps\GuzzleHttp\Promise\PromiseInterface;
+use LDC\Deps\Psr\Http\Client\ClientInterface;
 /**
  * Class UploadApi for accessing Cloudinary Upload API functionality
  *
@@ -45,6 +46,16 @@ class UploadApi
     public function __construct(mixed $configuration = null)
     {
         $this->apiClient = new UploadApiClient($configuration);
+    }
+    /**
+     * Sets a PSR-18 HTTP client for the requests of this API instance, or the default when null.
+     *
+     * @param ClientInterface|null $client The PSR-18 client.
+     */
+    public function setHttpClient(?ClientInterface $client): static
+    {
+        $this->apiClient->setHttpClient($client);
+        return $this;
     }
     /**
      * Gets Upload API end point.

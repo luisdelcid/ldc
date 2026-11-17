@@ -15,6 +15,7 @@ use LDC\Deps\Cloudinary\Api\ApiUtils;
 use LDC\Deps\Cloudinary\Api\Exception\ApiError;
 use LDC\Deps\Cloudinary\ArrayUtils;
 use LDC\Deps\Cloudinary\Configuration\Provisioning\ProvisioningConfiguration;
+use LDC\Deps\Psr\Http\Client\ClientInterface;
 /**
  * Class AccountApi
  *
@@ -32,6 +33,16 @@ class AccountApi
     public function __construct(?ProvisioningConfiguration $configuration = null)
     {
         $this->accountApiClient = new AccountApiClient($configuration);
+    }
+    /**
+     * Sets a PSR-18 HTTP client for the requests of this API instance, or the default when null.
+     *
+     * @param ClientInterface|null $client The PSR-18 client.
+     */
+    public function setHttpClient(?ClientInterface $client): static
+    {
+        $this->accountApiClient->setHttpClient($client);
+        return $this;
     }
     /**
      * Gets details of a specific user.

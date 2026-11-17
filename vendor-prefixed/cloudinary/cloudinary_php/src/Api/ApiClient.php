@@ -19,7 +19,6 @@ use LDC\Deps\Cloudinary\Configuration\Configuration;
 use LDC\Deps\Cloudinary\FileUtils;
 use LDC\Deps\Cloudinary\Utils;
 use Exception;
-use LDC\Deps\GuzzleHttp\Client;
 use LDC\Deps\GuzzleHttp\Promise\Create;
 use LDC\Deps\GuzzleHttp\Promise\PromiseInterface;
 use LDC\Deps\GuzzleHttp\Psr7\LimitStream;
@@ -50,10 +49,6 @@ class ApiClient extends BaseApiClient
         $this->configuration($configuration);
         $this->baseUri = "{$this->api->uploadPrefix}/" . self::apiVersion($this->api->apiVersion) . "/{$this->cloud->cloudName}/";
         $this->createHttpClient();
-    }
-    protected function createHttpClient(): void
-    {
-        $this->httpClient = new Client($this->buildHttpClientConfig());
     }
     /**
      * Gets cloud configuration of the current client.
@@ -319,14 +314,16 @@ class ApiClient extends BaseApiClient
         $clientConfig = ['base_uri' => $this->baseUri, 'connect_timeout' => $this->api->connectionTimeout, 'timeout' => $this->api->timeout, 'proxy' => $this->api->apiProxy, 'headers' => ['User-Agent' => self::userAgent()], 'http_errors' => \false];
         if (isset($this->cloud->oauthToken)) {
             $authConfig = ['headers' => ['Authorization' => 'Bearer ' . $this->cloud->oauthToken]];
-        } else {
+        } elseif (!empty($this->cloud->apiKey) && !empty($this->cloud->apiSecret)) {
             $authConfig = ['auth' => [$this->cloud->apiKey, $this->cloud->apiSecret]];
+        } else {
+            $authConfig = [];
         }
         if (isset($authConfig['headers'])) {
             $clientConfig['headers'] = array_merge($clientConfig['headers'], $authConfig['headers']);
             unset($authConfig['headers']);
         }
-        return array_merge($clientConfig, $authConfig);
+        return array_merge($clientConfig, $authConfig, self::httpHandlerConfig($this->psrHttpClient));
     }
     /**
      * Builds multipart request body from an array of parameters

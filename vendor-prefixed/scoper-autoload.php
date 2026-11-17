@@ -35,6 +35,9 @@ if (!function_exists('humbug_phpscoper_expose_class')) {
 // humbug_phpscoper_expose_class('Attribute', 'LDC\Deps\Attribute'); // commented by WPify Scoper
 // humbug_phpscoper_expose_class('UnhandledMatchError', 'LDC\Deps\UnhandledMatchError'); // commented by WPify Scoper
 // humbug_phpscoper_expose_class('Stringable', 'LDC\Deps\Stringable'); // commented by WPify Scoper
+// humbug_phpscoper_expose_class('AllowDynamicProperties', 'LDC\Deps\AllowDynamicProperties'); // commented by WPify Scoper
+// humbug_phpscoper_expose_class('SensitiveParameterValue', 'LDC\Deps\SensitiveParameterValue'); // commented by WPify Scoper
+// humbug_phpscoper_expose_class('SensitiveParameter', 'LDC\Deps\SensitiveParameter'); // commented by WPify Scoper
 
 // Function aliases. For more information see:
 // https://github.com/humbug/php-scoper/blob/master/docs/further-reading.md#function-aliases
@@ -47,7 +50,10 @@ if (!function_exists('humbug_phpscoper_expose_class')) {
 // if (!function_exists('fdiv')) { function fdiv() { return \LDC\Deps\fdiv(...func_get_args()); } } // commented by WPify Scoper
 // if (!function_exists('get_debug_type')) { function get_debug_type() { return \LDC\Deps\get_debug_type(...func_get_args()); } } // commented by WPify Scoper
 // if (!function_exists('get_resource_id')) { function get_resource_id() { return \LDC\Deps\get_resource_id(...func_get_args()); } } // commented by WPify Scoper
-// if (!function_exists('getallheaders')) { function getallheaders() { return \LDC\Deps\getallheaders(...func_get_args()); } } // commented by WPify Scoper
+// if (!function_exists('ini_parse_quantity')) { function ini_parse_quantity() { return \LDC\Deps\ini_parse_quantity(...func_get_args()); } } // commented by WPify Scoper
+// if (!function_exists('odbc_connection_string_is_quoted')) { function odbc_connection_string_is_quoted() { return \LDC\Deps\odbc_connection_string_is_quoted(...func_get_args()); } } // commented by WPify Scoper
+// if (!function_exists('odbc_connection_string_quote')) { function odbc_connection_string_quote() { return \LDC\Deps\odbc_connection_string_quote(...func_get_args()); } } // commented by WPify Scoper
+// if (!function_exists('odbc_connection_string_should_quote')) { function odbc_connection_string_should_quote() { return \LDC\Deps\odbc_connection_string_should_quote(...func_get_args()); } } // commented by WPify Scoper
 // if (!function_exists('preg_last_error_msg')) { function preg_last_error_msg() { return \LDC\Deps\preg_last_error_msg(...func_get_args()); } } // commented by WPify Scoper
 // if (!function_exists('str_contains')) { function str_contains() { return \LDC\Deps\str_contains(...func_get_args()); } } // commented by WPify Scoper
 // if (!function_exists('str_ends_with')) { function str_ends_with() { return \LDC\Deps\str_ends_with(...func_get_args()); } } // commented by WPify Scoper

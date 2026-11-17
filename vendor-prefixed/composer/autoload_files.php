@@ -8,8 +8,9 @@ $baseDir = dirname($vendorDir);
 return array(
     '6e3fae29631ef280660b3cdad06f25a8' => $vendorDir . '/symfony/deprecation-contracts/function.php',
     'a4a119a56e50fbb293281d9a48007e0e' => $vendorDir . '/symfony/polyfill-php80/bootstrap.php',
-    '7b11c4dc42b3b3023073cb14e519683c' => $vendorDir . '/ralouphie/getallheaders/src/getallheaders.php',
-    '37a3dc5111fe8f707ab4c132ef1dbc62' => $vendorDir . '/guzzlehttp/guzzle/src/functions_include.php',
+    '5897ea0ac4cccf14d323035e65887801' => $vendorDir . '/symfony/polyfill-php82/bootstrap.php',
+    '1f87db08236948d07391152dccb70f04' => $vendorDir . '/google/apiclient-services/autoload.php',
+    'a8d3953fd9959404dd22d3dfcd0a79f0' => $vendorDir . '/google/apiclient/src/aliases.php',
     '9938ac01ec8e84536bdabb17e96e321e' => $vendorDir . '/opis/closure/src/functions.php',
-    'bc0af1337b39f0d750e835f5263eb646' => $vendorDir . '/yahnis-elsts/plugin-update-checker/load-v5p7.php',
+    'd7b84b18862ca404853ecae4a88762f0' => $vendorDir . '/yahnis-elsts/plugin-update-checker/load-v6p0.php',
 );

@@ -6,10 +6,12 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
+    'LDC\\Deps\\Symfony\\Polyfill\\Php82\\' => array($vendorDir . '/symfony/polyfill-php82'),
     'LDC\\Deps\\Symfony\\Polyfill\\Php80\\' => array($vendorDir . '/symfony/polyfill-php80'),
     'LDC\\Deps\\Psr\\Log\\' => array($vendorDir . '/psr/log/src'),
     'LDC\\Deps\\Psr\\Http\\Message\\' => array($vendorDir . '/psr/http-factory/src', $vendorDir . '/psr/http-message/src'),
     'LDC\\Deps\\Psr\\Http\\Client\\' => array($vendorDir . '/psr/http-client/src'),
+    'LDC\\Deps\\Psr\\Cache\\' => array($vendorDir . '/psr/cache/src'),
     'LDC\\Deps\\Opis\\Closure\\' => array($vendorDir . '/opis/closure/src'),
     'LDC\\Deps\\Monolog\\' => array($vendorDir . '/monolog/monolog/src/Monolog'),
     'LDC\\Deps\\Less\\' => array($vendorDir . '/wikimedia/less.php/lib/Less'),
@@ -17,5 +19,8 @@ return array(
     'LDC\\Deps\\GuzzleHttp\\Psr7\\' => array($vendorDir . '/guzzlehttp/psr7/src'),
     'LDC\\Deps\\GuzzleHttp\\Promise\\' => array($vendorDir . '/guzzlehttp/promises/src'),
     'LDC\\Deps\\GuzzleHttp\\' => array($vendorDir . '/guzzlehttp/guzzle/src'),
+    'LDC\\Deps\\Google\\Service\\' => array($vendorDir . '/google/apiclient-services/src'),
+    'LDC\\Deps\\Google\\Auth\\' => array($vendorDir . '/google/auth/src'),
+    'LDC\\Deps\\Google\\' => array($vendorDir . '/google/apiclient/src'),
     'LDC\\Deps\\Firebase\\JWT\\' => array($vendorDir . '/firebase/php-jwt/src'),
 );

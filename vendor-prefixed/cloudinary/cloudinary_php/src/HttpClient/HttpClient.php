@@ -10,6 +10,7 @@
  */
 namespace LDC\Deps\Cloudinary;
 
+use LDC\Deps\Cloudinary\Api\BaseApiClient;
 use LDC\Deps\Cloudinary\Configuration\Configuration;
 use LDC\Deps\Cloudinary\Exception\Error;
 use LDC\Deps\Cloudinary\Log\LoggerTrait;
@@ -35,7 +36,7 @@ class HttpClient
      */
     public function __construct(?Configuration $configuration = null)
     {
-        $this->httpClient = new Client();
+        $this->httpClient = new Client(BaseApiClient::httpHandlerConfig());
         if ($configuration === null) {
             $configuration = Configuration::instance();
         }

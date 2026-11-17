@@ -1,0 +1,23 @@
+<?php
+
+namespace LDC\Deps\YahnisElsts\PluginUpdateChecker\v6p0\DebugBar;
+
+use LDC\Deps\YahnisElsts\PluginUpdateChecker\v6p0\Theme\UpdateChecker;
+if (!class_exists(ThemePanel::class, \false)) {
+    class ThemePanel extends Panel
+    {
+        /**
+         * @var UpdateChecker
+         */
+        protected $updateChecker;
+        protected function displayConfigHeader()
+        {
+            $this->row('Theme directory', esc_html($this->updateChecker->directoryName));
+            parent::displayConfigHeader();
+        }
+        protected function getUpdateFields()
+        {
+            return array_merge(parent::getUpdateFields(), array('details_url'));
+        }
+    }
+}

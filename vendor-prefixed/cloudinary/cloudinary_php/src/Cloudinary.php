@@ -11,6 +11,7 @@
 namespace LDC\Deps\Cloudinary;
 
 use LDC\Deps\Cloudinary\Api\Admin\AdminApi;
+use LDC\Deps\Cloudinary\Api\BaseApiClient;
 use LDC\Deps\Cloudinary\Api\Search\SearchFoldersApi;
 use LDC\Deps\Cloudinary\Api\Search\SearchApi;
 use LDC\Deps\Cloudinary\Api\Upload\UploadApi;
@@ -21,6 +22,7 @@ use LDC\Deps\Cloudinary\Configuration\Configuration;
 use LDC\Deps\Cloudinary\Tag\ImageTag;
 use LDC\Deps\Cloudinary\Tag\TagBuilder;
 use LDC\Deps\Cloudinary\Tag\VideoTag;
+use LDC\Deps\Psr\Http\Client\ClientInterface;
 /**
  * Defines the Cloudinary instance.
  *
@@ -33,7 +35,7 @@ class Cloudinary
      *
      * @var string VERSION
      */
-    public const VERSION = '3.1.3';
+    public const VERSION = '3.3.0';
     /**
      * Defines the Cloudinary cloud details and other global configuration options.
      *
@@ -45,6 +47,10 @@ class Cloudinary
      */
     protected TagBuilder $tagBuilder;
     /**
+     * @var ClientInterface|null $httpClient PSR-18 client for the API objects this instance creates.
+     */
+    protected ?ClientInterface $httpClient = null;
+    /**
      * Cloudinary constructor.
      *
      * @param array|string|Configuration|null $config The Configuration source.
@@ -54,6 +60,27 @@ class Cloudinary
         $this->configuration = new Configuration($config);
         $this->configuration->validate();
         $this->tagBuilder = new TagBuilder($this->configuration);
+    }
+    /**
+     * Sets a PSR-18 HTTP client for the API objects this instance creates, or the default when null.
+     *
+     * @param ClientInterface|null $client The PSR-18 client.
+     */
+    public function setHttpClient(?ClientInterface $client): static
+    {
+        $this->httpClient = $client;
+        return $this;
+    }
+    /**
+     * Sets the process-wide default PSR-18 HTTP client, or restores the built-in client when null.
+     *
+     * Applies to API objects created afterwards that have no client of their own.
+     *
+     * @param ClientInterface|null $client The PSR-18 client.
+     */
+    public static function setDefaultHttpClient(?ClientInterface $client): void
+    {
+        BaseApiClient::setDefaultHttpClient($client);
     }
     /**
      * Creates a new Image instance using the current configuration instance.
@@ -122,7 +149,7 @@ class Cloudinary
      */
     public function adminApi(): AdminApi
     {
-        return new AdminApi($this->configuration);
+        return $this->withHttpClient(new AdminApi($this->configuration));
     }
     /**
      * Creates a new UploadApi instance using the current configuration instance.
@@ -130,7 +157,7 @@ class Cloudinary
      */
     public function uploadApi(): UploadApi
     {
-        return new UploadApi($this->configuration);
+        return $this->withHttpClient(new UploadApi($this->configuration));
     }
     /**
      * Creates a new SearchApi instance using the current configuration instance.
@@ -138,7 +165,7 @@ class Cloudinary
      */
     public function searchApi(): SearchApi
     {
-        return new SearchApi($this->configuration);
+        return $this->withHttpClient(new SearchApi($this->configuration));
     }
     /**
      * Creates a new SearchFoldersApi instance using the current configuration instance.
@@ -146,7 +173,23 @@ class Cloudinary
      */
     public function searchFoldersApi(): SearchFoldersApi
     {
-        return new SearchFoldersApi($this->configuration);
+        return $this->withHttpClient(new SearchFoldersApi($this->configuration));
+    }
+    /**
+     * Applies this instance's PSR-18 client to an API object.
+     *
+     * @template T of AdminApi|UploadApi|SearchApi
+     *
+     * @param T $api The API object.
+     *
+     * @return T
+     */
+    protected function withHttpClient(AdminApi|UploadApi|SearchApi $api): AdminApi|UploadApi|SearchApi
+    {
+        if ($this->httpClient !== null) {
+            $api->setHttpClient($this->httpClient);
+        }
+        return $api;
     }
     /**
      * Creates a new object and imports current instance configuration.

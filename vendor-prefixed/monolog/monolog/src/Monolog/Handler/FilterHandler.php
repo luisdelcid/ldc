@@ -122,7 +122,7 @@ class FilterHandler extends Handler implements ProcessableHandlerInterface, Rese
         $filtered = [];
         foreach ($records as $record) {
             if ($this->isHandling($record)) {
-                $filtered[] = $record;
+                $filtered[] = \count($this->processors) > 0 ? $this->processRecord($record) : $record;
             }
         }
         if (\count($filtered) > 0) {
